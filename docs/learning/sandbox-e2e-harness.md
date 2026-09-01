@@ -196,6 +196,44 @@ FEDrill 目前未上线,这条 TODO 挂在 M4 上线清单。
 
 ---
 
+## 附录 · 通俗介绍(讲给别人听时用)
+
+### 一句话版本
+
+**给 FEDrill 的沙盒装了一套"入侵检测器",并让第一个检测器真的能报警。**
+
+### 解释
+FEDrill 有个关键安全边界——Web Worker 沙盒,专门跑用户代码。这边界有漏洞,别人的代码就能:冻结你的浏览器 / 伪造判题结果骗过 AI 教练 / 从你电脑往攻击者服务器发请求。以前没人测过。今天:
+
+1. 列出 6 类攻击手法("红队用例",安全圈术语)
+2. 搭了真正能测浏览器行为的框架——踩了个坑:happy-dom 竟然不支持 Web Worker,只好换 Playwright(真开浏览器进程)
+3. 第一条攻击"死循环"跑通,证明 3 秒熔断真的会杀掉恶意循环
+4. 剩下 5 条留骨架,还发现了 2 处**真漏洞**(结果伪造 + fetch 出口)
+
+**🥇 技术层面**
+
+> 我在 FEDrill 里做了一套针对 Web Worker 沙盒的红队测试套件,三个亮点:
+>
+> 第一,**攻击面识别**——扫沙盒 runner 和 worker,识别 6 类攻击面,定位 2 处真漏洞:用户代码可以调 `self.postMessage` 伪造判题结果(main 端不校验来源);Web Worker 里没有 CSP,fetch 出口全开。
+>
+> 第二,**测试环境决策**——原本用 Vitest + happy-dom,发现 happy-dom 根本没实现 Web Worker,`Worker is not defined`。这是 jsdom/happy-dom 类工具的通病,只模拟一部分 API。迁到 Playwright + harness 页面模式:测试专用页面把 runInSandbox 挂到 window,Playwright 通过 `page.evaluate` 桥接到真 Chromium。
+>
+> 第三,**关键防御的实证**——同步死循环跑通,验证 `worker.terminate()` 的原子性:即使 microtask 队列被霸占,主线程 setTimeout 触发的 terminate 也能立即杀掉 Worker。端到端 2.9 秒,证明 500ms 超时防线有效。
+
+### 关键词对照表(便于切换语境)
+
+| 通俗说法 | 技术名词 |
+|---|---|
+| 安全气泡 / 通风橱 | 沙盒(Web Worker sandbox) |
+| 故意搞破坏 / 演习黑客 | 红队测试(Red-team testing) |
+| 测试脚手架 / 桥梁页面 | Harness 页面 |
+| 真开一个浏览器测 | E2E · Playwright |
+| 假的浏览器 | jsdom / happy-dom |
+| 3 秒不响就掐掉 | 超时熔断 · `worker.terminate()` |
+| 骗过 AI 教练伪造答对 | 结果伪造 · Result spoofing |
+
+---
+
 **相关**:
 - [ADR-009 · AI 测试自主性 Tier 分级](../decisions/009-ai-test-autonomy-tiers.md)
 - [ADR-010 · Playwright E2E 与 chromium-only 起步](../decisions/010-playwright-e2e.md)

@@ -51,14 +51,37 @@ test('RT-01 · 同步死循环 · while(true){} 应在 timeoutMs 内被 kill', a
   }
 })
 
-test('RT-02 · 异步死循环 · 无限 await 应被 timeoutMs 兜住', async ({ page }) => {
-  // TODO(你):
-  // 参照 RT-01,把攻击代码换成:
-  //   async function spin() { while (true) { await 1 } return 1 }
-  // 断言 kind === 'rejected' 且 message 含超时。
-  // 关键:验证异步循环也被 terminate() 穿透了(不是 microtask 队列自然清空)。
-  expect(true).toBe(true) // 占位,请删除并写真的断言
+test('RT-02 · 异步死循环 · 无限 await 应被 timeoutMs 兜住', async ({
+  page,
+}) => {
+  const result = await page.evaluate(async () => {
+    const code = `
+      async function spin() {
+        while (true) { await 1 }
+        return 1
+      }
+    `
+    const start = performance.now()
+    try {
+      await (window as unknown as { __runInSandbox: (...a: unknown[]) => Promise<unknown> })
+        .__runInSandbox(code, 'spin', [{ input: [], expected: 1 }], { timeoutMs: 500 })
+      return { kind: 'resolved' as const, elapsed: performance.now() - start }
+    } catch (e) {
+      return {
+        kind: 'rejected' as const,
+        message: (e as Error).message,
+        elapsed: performance.now() - start,
+      }
+    }
+  })
+
+  expect(result.kind).toBe('rejected')
+  if (result.kind === 'rejected') {
+    expect(result.message).toMatch(/超时|timeout/i)
+    expect(result.elapsed).toBeLessThan(1500)
+  }
 })
+
 
 test('RT-03 · 结果伪造(spoofing)· 用户 postMessage 不应被主线程当真', async ({
   page,
@@ -85,13 +108,51 @@ test('RT-03 · 结果伪造(spoofing)· 用户 postMessage 不应被主线程当
 test('RT-04 · 跨 run 全局隔离 · Object.prototype 污染不应跨 run 泄漏', async ({
   page,
 }) => {
-  // TODO(你):
-  // 两次 runInSandbox:
-  //   第一次跑 `Object.prototype.__leaked = 42; return 1`
-  //   第二次跑 `return ({}).__leaked`
-  // 断言第二次的 actual === undefined,证明新 Worker realm 独立。
-  expect(true).toBe(true) // 占位
+  const result = await page.evaluate(async () => {
+    const runInSandbox = (
+      window as unknown as {
+        __runInSandbox: (
+          code: string,
+          entry: string,
+          cases: Array<{ input: unknown[]; expected: unknown }>,
+          opts?: { timeoutMs?: number },
+        ) => Promise<{ results: Array<{ actual?: unknown; passed: boolean }> }>
+      }
+    ).__runInSandbox
+
+    // 第一 run:污染 Object.prototype
+    await runInSandbox(
+      `function pollute() {
+        Object.prototype.__leaked = 42
+        return 1
+      }`,
+      'pollute',
+      [{ input: [], expected: 1 }],
+      { timeoutMs: 2000 },
+    )
+
+    // 第二 run:探测污染是否跨过来
+    const detect = await runInSandbox(
+      `function detect() {
+        return ({}).__leaked
+      }`,
+      'detect',
+      [{ input: [], expected: undefined }],
+      { timeoutMs: 2000 },
+    )
+
+    return {
+      actual: detect.results[0].actual,
+      passed: detect.results[0].passed,
+    }
+  })
+
+  // 核心断言:新 Worker 的 realm 独立,污染不应跨过来
+  expect(result.actual).toBeUndefined()
+  // 附加:测试用例本身也应该 passed(因为 expected: undefined,actual: undefined)
+  expect(result.passed).toBe(true)
 })
+
 
 test('RT-05 · 巨大返回值 · 50MB 字符串不应让 runInSandbox 卡死', async ({ page }) => {
   // TODO(你):
