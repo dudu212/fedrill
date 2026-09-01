@@ -55,17 +55,24 @@
 - ReAct 模式：thought → action → observation → 循环
 - 参考：[技术方案.md §4.2 Agent Loop](技术方案.md)
 
-### Phase 1a · Agent Loop 起手（08/30–09/05，7 天）
+### Phase 1a · Agent Loop 起手（08/30–09/01，✅ 完成 · 提前 4 天）
 
-**目标**：端到端跑通 1 个 tool 的 Agent Loop。
+**目标**：端到端跑通 1 个 tool 的 Agent Loop。**已达成:typo bug demo → AI 触发 run_tests → 沙箱 0/4 挂 → AI 分析 → 生成回复,全链路无用户手动干预**。
 
 **任务清单**：
 
-- [ ] 新路由 `POST /api/agent/step`，流协议升级为**三段**：`text` / `tool_call` / `tool_result` / `done`
-- [ ] `lib/agent/loop.ts` v1：ReAct 循环 + `max_iterations = 10` + AbortController
-- [ ] `lib/agent/tools/run-tests.ts`：M2a **唯一** tool，参数 `{}`，从 Session 读 code + basic 用例，回 `TestResult[]`
-- [ ] 客户端流解析升级：识别三种 chunk 类型，走不同渲染分支
-- [ ] Provider 抽象层薄封装（`lib/llm/`），为 M2b 切 Claude Haiku 4.5 留后门
+- [x] 新路由 `POST /api/agent/step`，SSE 流出 `text_delta` / `tool_call` / `done` 三种 chunk（[route.ts](../app/api/agent/step/route.ts)）
+- [x] `lib/agent/loop.ts` v1：ReAct 循环 + `MAX_ITERATIONS = 10` + AbortSignal 端到端
+- [x] `lib/agent/tools/run-tests.ts`：M2a 唯一 tool，参数 `{}`，从 Session 读 code + basic 用例
+- [x] 客户端流解析升级：识别三种 chunk 类型 + status 栏可视化 + 语义一致刷 UI
+- [x] Provider 抽象层薄封装（[lib/llm/](../lib/llm/)），M2b 切 Claude Haiku 4.5 只改一行 import
+
+**额外产出**（超原计划）：
+
+- [x] Streaming 状态栏 · 🤔 思考 → 🔧 调用 → 📊 分析 → ✍️ 生成
+- [x] 语义一致性 · AI 触发 run_tests 后同步刷新 UI 面板（避免"AI 做了但页面没反应"）
+- [x] Round 0 Prompt Branch B 强化 · "整体验证类必须先调 tool"（拦下幻觉路径）
+- [x] ADR-011 · Agent Loop 在客户端跑，服务端只做 LLM 代理
 
 **学习焦点（L2 进阶 Part 1）**：
 
@@ -125,14 +132,14 @@
 
 ## 五、学习 + 开发并行时间表
 
-| 日期 | 项目焦点 | 学习焦点（L2） | 交付 |
-| --- | --- | --- | --- |
-| 08/27–08/29（Ph0） | 地基：ADR + Repo + 测试 | 入门 · JSON Schema / tool_use / ReAct | 2 份 ADR + SessionRepo + 3 条测试 |
-| 08/30–09/05（Ph1a） | Agent Loop v1 + `run_tests` | 进阶 · while+max_iter / streaming 分类 | 端到端跑通 1 tool |
-| 09/06–09/12（Ph1b） | Trace UI + Round 1 prompt | 进阶 · tool design / error shape / trace | 至少 1 道题两 Round 端到端 |
-| 09/13–09/15（Ph1c） | 打磨 + 简历定稿 | 复习 · 面试话术 | Demo 视频 + README 更新 |
-| **09/15 锁 M2a** | | | 简历三条硬亮点定型 |
-| 秋招投递后（Ph2） | M2b 加分区 | 精通 · Event Loop Engineering | 无死线 |
+| 日期 | 项目焦点 | 学习焦点（L2） | 交付 | 状态 |
+| --- | --- | --- | --- | --- |
+| 08/27–08/29（Ph0） | 地基：ADR + Repo + 测试 | 入门 · JSON Schema / tool_use / ReAct | 5 份 ADR + SessionRepo + 43 条测试 + Playwright 骨架 | ✅ |
+| 08/30–09/01（Ph1a） | Agent Loop v1 + `run_tests` | 进阶 · while+max_iter / streaming 分类 | 端到端跑通 · 状态栏 · 语义一致 | ✅ **提前 4 天** |
+| 09/02–09/12（Ph1b） | Trace UI 卡片化 + Round 1 prompt | 进阶 · tool design / error shape / trace | 至少 1 道题两 Round 端到端 | 🔴 冲刺中 |
+| 09/13–09/15（Ph1c） | 打磨 + 简历定稿 + demo | 复习 · 面试话术 | Demo 视频 + README 定稿 | ⏭️ |
+| **09/15 锁 M2a** | | | 简历三条硬亮点定型 | 🎯 |
+| 秋招投递后（Ph2） | M2b 加分区 | 精通 · Event Loop Engineering | 无死线 | ⏸ |
 
 ## 六、M2a 验收标准（全部满足才算完成）
 
@@ -162,13 +169,32 @@
 
 答不清时 → 停 → 读文档 / 看代码 → 直到答得清。**这条规则本身**就是 event loop engineering 的入门课：给自己一个 tick 加终止条件。
 
-## 九、简历三条硬亮点（M2a 锁定后填这个）
+## 九、简历三条硬亮点（Phase 1a 完成 · 2026-09-01 定稿）
 
-预留位置，M2a 完成时把最终版填这里 + [README.md 简历亮点节](../README.md)：
+**M2a Phase 1a 端到端跑通后正式定稿。完整版落在 [README.md 简历亮点节](../README.md#简历亮点面试话术钩子)，含 ADR 深挖链接。**
 
-1. `TBD` —— Agent Loop 手写 + tool 集成 + 阶梯追问
-2. `TBD` —— Web Worker 代码沙盒 + `{__fn}/{__val}` escape hatch
-3. `TBD` —— 手写 LLM Harness（SSE + AbortController 传递链，零依赖）
+1. **手写 Agent Loop + tool_use 协议**（客户端主导 + 服务端最薄）
+   - ReAct 200 行 · `MAX_ITERATIONS=10` 护栏 · AsyncGenerator 出流 · AbortController 端到端
+   - DeepSeek `tool_call` 分片按 index 拼装 · `arguments` JSON.parse 藏 adapter
+   - 服务端仅 60 行 SSE 代理无状态 · tool 就地在浏览器 Web Worker 执行 · 零 client-server 往返
+   - 决策留痕：[ADR-002](decisions/002-hand-rolled-vs-sdk-agent.md) / [ADR-004](decisions/004-agent-loop-vs-langchain.md) / [ADR-011](decisions/011-client-side-agent-loop.md)
+
+2. **Web Worker 代码沙盒 + `{__fn}/{__val}/{__throw}` 逃生舱**
+   - `new Function` 隔离 · 3 秒 `worker.terminate()` 强杀 · 循环安全 `deepEqual`（`WeakMap` / `Date` / `RegExp`）
+   - **逃生舱设计**突破 postMessage 结构化克隆限制，让测试用例可以传活函数、活 Promise、异常场景
+   - 不引入开源 OJ 的理由：[ADR-006](decisions/006-sandbox-vs-oj.md)
+
+3. **手写 LLM Harness · SSE 帧解析 + 端到端中断链**
+   - 客户端 20 行 `getReader() + TextDecoder`，服务端手写 `data: / [DONE] / delta.content` 帧
+   - AbortController 传递链：client → route `request.signal` → 上游 DeepSeek fetch cancel → 上游立即停止计费
+   - 决策留痕：[ADR-001](decisions/001-choose-ai-sdk.md) · 深挖 [sse-under-the-hood.md](learning/sse-under-the-hood.md)
+
+**加分点**（超出原计划的额外产出）：
+
+- **反幻觉 Prompt 基座**：4 布尔状态标记 + 4 分支路由 + 陈旧检测（[复盘笔记](learning/prompt-context-pitfalls.md)）
+- **Streaming 状态栏 + 语义一致性**：AI 每步动作对用户可见 + AI 触发跑测试 = 用户点"运行"的完全一致效果
+- **11 份 ADR** 形成"拒绝一把梭抽象"技术叙事
+- **Playwright E2E 骨架 + AI 测试 tier 分级**（[ADR-009](decisions/009-ai-test-autonomy-tiers.md) / [ADR-010](decisions/010-playwright-e2e.md)）
 
 ## 十、相关文档
 

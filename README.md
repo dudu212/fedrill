@@ -10,7 +10,7 @@ FEDrill 是一个**前端求职者训练平台**，用 AI 模拟面试官对你�
 - 🧠 **算法题**（M3）：苏格拉底式引导（不给答案）+ D3 算法可视化
 - 📚 **八股题**（M4）：对话式深挖 + SM-2 间隔重复调度
 
-## 当前进度（2026-08-27）
+## 当前进度（2026-09-01）
 
 **M1 · 手撕题单题闭环** ✅ 已跑通
 
@@ -23,11 +23,29 @@ FEDrill 是一个**前端求职者训练平台**，用 AI 模拟面试官对你�
 - `AbortController` 中断链贯通到 DeepSeek 上游
 - Prompt 反幻觉基座：4 布尔状态标记 + 4 分支路由 + 优先级 0 知识题识别 + 陈旧检测（[复盘笔记](docs/learning/prompt-context-pitfalls.md)）
 
-**M2 · 冲刺中**（M2a 硬锁 **2026-09-15** · M2b 秋招投递后启动）
+**M2a Phase 0** ✅ 起步准备完成
 
-- **M2a 目标**（简历可放版本）：SessionRepo 地基 + Agent Loop v1 + `run_tests` tool + Round 1 边界追问端到端
-- 详细计划见 [docs/roadmap-m2.md](docs/roadmap-m2.md) —— 单一事实源
-- 学习节奏 L2 Agent Loop 与代码并行推进（见 [docs/学习规划.md](docs/学习规划.md)）
+- SessionRepo（Repository Pattern · M4 换 Supabase 时调用方零改动 · 自动迁移老 key）
+- Vitest 底线测试脚手架（43 条断言 · 覆盖 `deepEqual` / prompt / SessionRepo 迁移）
+- 五份 ADR（[002](docs/decisions/002-hand-rolled-vs-sdk-agent.md) / [004](docs/decisions/004-agent-loop-vs-langchain.md) / [006](docs/decisions/006-sandbox-vs-oj.md) / [009](docs/decisions/009-ai-test-autonomy-tiers.md) / [010](docs/decisions/010-playwright-e2e.md)）—— "拒绝一把梭抽象" 技术叙事
+- Playwright E2E 骨架 + AI 测试 tier 分级
+- 学习笔记：[tool-use-and-react](docs/learning/tool-use-and-react.md)、[prompt-context-pitfalls](docs/learning/prompt-context-pitfalls.md)、[ai-testing-interview](docs/learning/ai-testing-interview.md)
+
+**M2a Phase 1a** ✅ 端到端跑通
+
+- **手写 Agent Loop**（`lib/agent/loop.ts` · ReAct + `MAX_ITERATIONS=10` + AbortSignal 端到端）
+- **Provider 抽象层**（`lib/llm/` · DeepSeek 实现 · tool_call 分片拼装 + args JSON.parse 藏于 adapter）
+- **客户端跑 loop + 服务端零状态 SSE 代理**（见 [ADR-011](docs/decisions/011-client-side-agent-loop.md)）
+- **`run_tests` tool 集成**：客户端本地执行，复用 M1 Web Worker 沙箱
+- **Streaming 状态栏**：`🤔 思考 → 🔧 调用工具 → 📊 分析结果 → ✍️ 生成回复`，AI 每一步动作对用户可见
+- **语义一致性**：AI 触发跑测试与用户点"运行"按钮的可见效果完全一致
+
+**M2a 剩余里程**（09/15 硬锁前）：
+
+- Phase 1b · Trace UI 卡片化 + Round 1 边界追问 prompt
+- Phase 1c · demo 视频 + 简历定稿
+
+详细路线见 [docs/roadmap-m2.md](docs/roadmap-m2.md) —— M2 冲刺单一事实源。
 
 **范围锁**：不复刻 LeetCode（不追加大量题、不做多语言、不做用户系统），明文见 [需求方案.md §8](docs/需求方案.md#8--out-of-scope明确不做)。
 
@@ -63,19 +81,53 @@ pnpm dev
 
 ## 项目文档
 
-- [项目调研.md](docs/项目调研.md) — 为什么做（战略层）
-- [需求方案.md](docs/需求方案.md) — 具体做什么（战术层，PRD 权威）
-- [技术方案.md](docs/技术方案.md) — 怎么做（实现层）
-- [学习规划.md](docs/学习规划.md) — 学 Agent 全栈的路线图（L1-L6）
-- [docs/decisions/](docs/decisions/) — ADR 技术选型日志
-- [docs/learning/](docs/learning/) — 学习笔记（一稿可两用给博客）
+- [需求方案.md](docs/需求方案.md) — PRD（战术层 · 具体做什么）
+- [技术方案.md](docs/技术方案.md) — 技术蓝图（实现层）
+- [roadmap-m2.md](docs/roadmap-m2.md) — M2 冲刺单一事实源
+- [decisions/](docs/decisions/) — ADR 技术选型日志（11 份 · 每份都是面试话头）
+- [learning/](docs/learning/) — 学习笔记 + AI 测试面试题（5 份）
 
 ## 简历亮点（面试话术钩子）
 
-1. **手写 LLM Harness**：SSE 帧解析 + AbortController 传递链，零依赖 —— 见 [docs/learning/sse-under-the-hood.md](docs/learning/sse-under-the-hood.md)
-2. **Web Worker 代码沙盒**：`new Function` 隔离 + 3s 超时 + `{__fn}/{__val}` escape hatch 让测试用例可以传函数值
-3. **上下文注入 Agent**：题目 + 代码 + 测试结果三输入 system prompt，Round 状态由代码维护（LLM 做感知）
-4. **技术决策日志**：每个技术选型有 ADR，面试直接讲
+### 1. 手写 Agent Loop + tool_use 协议 · 客户端主导 + 服务端最薄
+
+- **ReAct 循环** 200 行内落地：`MAX_ITERATIONS=10` 护栏 · `AsyncGenerator` 流式事件 · `AbortController` 端到端断链（client → route → DeepSeek 一路可断）
+- **tool_use 协议实现**：DeepSeek 流式 `tool_call` 按 `index` 分片拼装 · `arguments` JSON.parse 藏进 adapter · 上层拿到就是对象不是字符串
+- **架构决策**：客户端跑 loop + 服务端只做无状态 SSE 代理（60 行 route handler）。**tool 直接在浏览器执行**，复用 M1 沙箱零重造，`AbortController` 一次搞定整条链路。深挖见 [ADR-002](docs/decisions/002-hand-rolled-vs-sdk-agent.md) / [ADR-011](docs/decisions/011-client-side-agent-loop.md)
+- 拒绝 Vercel AI SDK / LangChain，全栈一贯到底的"拒绝一把梭抽象"叙事
+
+### 2. Web Worker 代码沙盒 + `{__fn}/{__val}/{__throw}` 逃生舱
+
+- 手撕题判题基座：`new Function` 隔离 · 3 秒超时（`worker.terminate()` 强杀）· 手写循环安全 `deepEqual`（`WeakMap` 追踪已访问对，支持 `Date` / `RegExp` / 循环引用）
+- **关键创新** —— 逃生舱设计突破 `postMessage` 结构化克隆限制：
+  - `{__fn: "function(){...}"}` → Worker 内 `new Function` 复原成活函数
+  - `{__val: "Promise.resolve(1)"}` → 复原成活 Promise，让测试用例可以断言异步结果
+  - `{__throw: "msg"}` → 复原成必抛异常的函数，测异常场景
+- 为什么不用开源 OJ：判题模型错配 + 90% 功能用不上 + 简历叙事被稀释，见 [ADR-006](docs/decisions/006-sandbox-vs-oj.md)
+
+### 3. 手写 LLM Harness · SSE 帧解析 + 端到端中断链 · 零依赖
+
+- **客户端 20 行流式消费**：`getReader() + TextDecoder`，按 `\n\n` 分帧
+- **服务端手写 SSE 协议解析**：`data: / [DONE] / delta.content` 一路走通，拒绝 `Vercel AI SDK`
+- **`AbortController` 传递链**：用户点"中断" → client fetch abort → route handler `request.signal` → 上游 DeepSeek fetch cancel → 上游立即停止计费
+- 完整机制深挖 [sse-under-the-hood.md](docs/learning/sse-under-the-hood.md)，决策留痕 [ADR-001](docs/decisions/001-choose-ai-sdk.md)
+
+### 4. 反幻觉 Prompt 基座 · 从真实生产 bug 沉淀出的通用 pattern
+
+从两次 AI 翻车中总结（[复盘笔记](docs/learning/prompt-context-pitfalls.md)）：
+
+- **服务端预算的 4 布尔状态标记**注入 prompt（"有代码 / 已跑测试 / 有失败 / 全过"），让 LLM 不用自己推断状态
+- **4 分支路由 A/B/C/D + 优先级 0 知识题识别**：按用户意图分流，不再"一刀切"
+- **陈旧检测**：跑测试时快照代码字节，后续 code 改过没重跑 → 显式标记给 LLM，拦下"用旧结果分析新代码"的幻觉
+- **AI 触发跑测试的 UI 语义一致性**：AI 通过 tool 触发的判题结果同步刷 UI 面板，避免"AI 做了但用户看不到"的信任陷阱
+
+### 5. 技术决策日志（ADR）· 每份都是可深挖的面试话头
+
+11 份 ADR 覆盖：SDK 层（001/002/004）· 判题层（006）· 测试策略（009/010）· Agent 架构（011）等。**"拒绝一把梭抽象"** 是贯穿全项目的技术叙事。
+
+## Demo
+
+（Phase 1c 完成后补 · 30 秒 GIF）
 
 ## License
 
