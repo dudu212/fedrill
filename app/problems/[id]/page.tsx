@@ -14,7 +14,9 @@ import Editor from '@monaco-editor/react'
 import { categoryLabels, getProblem } from '@/data/problems'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult, TestResult } from '@/lib/sandbox/types'
-import type { ChatContext } from '@/lib/agent/round0-prompt'
+import { buildRound0SystemPrompt } from '@/lib/agent/round0-prompt'
+import { runAgentLoop } from '@/lib/agent/loop'
+import type { ProviderMessage } from '@/lib/llm/types'
 import {
   getSessionRepo,
   type SessionMessage,
@@ -40,6 +42,8 @@ export default function ProblemDetailPage() {
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
+  /** streaming 期间显示 AI 现在在做什么 · 状态栏用 */
+  const [agentStatus, setAgentStatus] = useState<string | null>(null)
   const chatAbortRef = useRef<AbortController | null>(null)
 
   // Split ratios (percentages, 0-100)
@@ -146,40 +150,108 @@ export default function ProblemDetailPage() {
     const nextMessages: WireMessage[] = [...messages, userMsg]
     setMessages([...nextMessages, { role: 'assistant', content: '' }])
     setStreaming(true)
+    setAgentStatus('🤔 思考中')
 
     const ac = new AbortController()
     chatAbortRef.current = ac
 
-    const context: ChatContext = {
+    // 按 ADR-011：客户端组装 system prompt，服务端保持无状态 LLM 代理
+    const systemPrompt = buildRound0SystemPrompt(problem, {
       problemId: problem.id,
       code,
       testResults,
       testedCodeSnapshot,
-    }
+    })
+    const initialMessages: ProviderMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...nextMessages.map((m) => ({ role: m.role, content: m.content })),
+    ]
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages, context }),
+      // 一个 assistant "气泡" 对应 loop 的一次 iteration 输出。
+      // pendingContent 累加当前气泡的文字；tool_result 后重置并等下一次 text_delta
+      // 开新气泡。
+      let pendingContent = ''
+      let newBubbleExpected = false
+
+      for await (const event of runAgentLoop({
+        problemId: problem.id,
+        initialMessages,
         signal: ac.signal,
-      })
-      if (!res.ok || !res.body) {
-        const errText = await res.text().catch(() => '未知错误')
-        throw new Error(`${res.status} · ${errText}`)
-      }
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let acc = ''
-      while (true) {
-        const { value, done } = await reader.read()
-        if (done) break
-        acc += decoder.decode(value, { stream: true })
-        setMessages((prev) => {
-          const copy = prev.slice()
-          copy[copy.length - 1] = { role: 'assistant', content: acc }
-          return copy
-        })
+      })) {
+        if (event.type === 'text_delta') {
+          setAgentStatus('✍️ 生成回复...')
+          if (newBubbleExpected) {
+            pendingContent = event.delta
+            setMessages((prev) => [
+              ...prev,
+              { role: 'assistant', content: pendingContent },
+            ])
+            newBubbleExpected = false
+          } else {
+            pendingContent += event.delta
+            setMessages((prev) => {
+              const copy = prev.slice()
+              copy[copy.length - 1] = {
+                role: 'assistant',
+                content: pendingContent,
+              }
+              return copy
+            })
+          }
+        } else if (event.type === 'tool_call') {
+          setAgentStatus(`🔧 调用 ${event.call.name}...`)
+          // MVP：行内 emoji 标记表达 tool_call；M2b Phase 1b 换成卡片组件
+          const marker = `🔧 调用 ${event.call.name}...`
+          pendingContent = pendingContent
+            ? `${pendingContent}\n\n${marker}`
+            : marker
+          setMessages((prev) => {
+            const copy = prev.slice()
+            copy[copy.length - 1] = {
+              role: 'assistant',
+              content: pendingContent,
+            }
+            return copy
+          })
+        } else if (event.type === 'tool_result') {
+          setAgentStatus('📊 拿到结果,分析中...')
+          const r = event.result as {
+            success?: boolean
+            passCount?: number
+            total?: number
+            allPassed?: boolean
+            error?: string
+          }
+          const summary = r.success
+            ? r.allPassed
+              ? ` → ✓ 全部 ${r.total} 个用例通过`
+              : ` → ✗ ${r.passCount}/${r.total} 通过`
+            : ` → ⚠️ 执行错误: ${r.error ?? '未知'}`
+          pendingContent += summary
+          setMessages((prev) => {
+            const copy = prev.slice()
+            copy[copy.length - 1] = {
+              role: 'assistant',
+              content: pendingContent,
+            }
+            return copy
+          })
+          // 语义一致：AI 触发的 run_tests 也应该像用户点"运行"一样刷新 UI 面板。
+          // tool 执行时已经把结果存到 SessionRepo，这里从 repo 拉回来同步 React state。
+          const snap = await repo.get(problem.id).catch(() => null)
+          if (snap?.lastTestResults) {
+            setTestResults(snap.lastTestResults)
+            setTestedCodeSnapshot(snap.testedCodeSnapshot)
+          }
+          // 下一次 text_delta 归属新 assistant 气泡
+          newBubbleExpected = true
+          pendingContent = ''
+        } else if (event.type === 'done') {
+          break
+        } else if (event.type === 'error') {
+          throw new Error(event.error)
+        }
       }
     } catch (e) {
       if (!(e instanceof Error && e.name === 'AbortError')) {
@@ -187,6 +259,7 @@ export default function ProblemDetailPage() {
       }
     } finally {
       setStreaming(false)
+      setAgentStatus(null)
       chatAbortRef.current = null
     }
   }, [problem, input, streaming, messages, code, testResults, testedCodeSnapshot])
@@ -408,6 +481,12 @@ export default function ProblemDetailPage() {
             {chatError && (
               <div className="border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                 {chatError}
+              </div>
+            )}
+            {streaming && agentStatus && (
+              <div className="flex items-center gap-2 border-t border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm text-blue-200">
+                <span className="animate-pulse text-blue-300">▍</span>
+                <span>{agentStatus}</span>
               </div>
             )}
             <HeightHandle
