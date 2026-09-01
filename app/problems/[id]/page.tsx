@@ -15,6 +15,7 @@ import { categoryLabels, getProblem } from '@/data/problems'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult, TestResult } from '@/lib/sandbox/types'
 import { buildRound0SystemPrompt } from '@/lib/agent/round0-prompt'
+import { buildRound1SystemPrompt } from '@/lib/agent/round1-prompt'
 import { runAgentLoop } from '@/lib/agent/loop'
 import type { ProviderMessage } from '@/lib/llm/types'
 import {
@@ -155,13 +156,18 @@ export default function ProblemDetailPage() {
     const ac = new AbortController()
     chatAbortRef.current = ac
 
-    // 按 ADR-011：客户端组装 system prompt，服务端保持无状态 LLM 代理
-    const systemPrompt = buildRound0SystemPrompt(problem, {
+    // 按 ADR-011：客户端组装 system prompt，服务端保持无状态 LLM 代理。
+    // 按 currentRound 派生:全过 basic → Round 1 边界追问; 否则 → Round 0 基础引导。
+    const ctxForPrompt = {
       problemId: problem.id,
       code,
       testResults,
       testedCodeSnapshot,
-    })
+    }
+    const systemPrompt =
+      currentRound === 1
+        ? buildRound1SystemPrompt(problem, ctxForPrompt)
+        : buildRound0SystemPrompt(problem, ctxForPrompt)
     const initialMessages: ProviderMessage[] = [
       { role: 'system', content: systemPrompt },
       ...nextMessages.map((m) => ({ role: m.role, content: m.content })),
