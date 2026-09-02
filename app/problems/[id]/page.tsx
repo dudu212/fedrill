@@ -23,7 +23,22 @@ import {
   type SessionMessage,
 } from '@/lib/repo/session-repo'
 
-type WireMessage = { role: 'user' | 'assistant' | 'system'; content: string }
+type WireMessage = {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  /** Assistant 消息本轮 iteration 里触发的 tool 调用(卡片渲染用).
+   *  MVP:仅在当次会话内活着,刷新页面后消失(SessionRepo 只存 role+content+timestamp)。*/
+  toolCalls?: UIToolCall[]
+}
+
+/** UI 层的 tool call · 附带执行状态和结果,供卡片折叠展开渲染 */
+type UIToolCall = {
+  id: string
+  name: string
+  args: unknown
+  status: 'pending' | 'done' | 'error'
+  result?: unknown
+}
 
 export default function ProblemDetailPage() {
   const params = useParams<{ id: string }>()
@@ -186,9 +201,10 @@ export default function ProblemDetailPage() {
 
     try {
       // 一个 assistant "气泡" 对应 loop 的一次 iteration 输出。
-      // pendingContent 累加当前气泡的文字；tool_result 后重置并等下一次 text_delta
-      // 开新气泡。
+      // pendingContent 累加当前气泡的文字；pendingToolCalls 记录本轮触发的 tool card;
+      // tool_result 后重置并等下一次 text_delta 开新气泡。
       let pendingContent = ''
+      let pendingToolCalls: UIToolCall[] = []
       let newBubbleExpected = false
 
       for await (const event of runAgentLoop({
@@ -200,6 +216,7 @@ export default function ProblemDetailPage() {
           setAgentStatus('✍️ 生成回复...')
           if (newBubbleExpected) {
             pendingContent = event.delta
+            pendingToolCalls = []
             setMessages((prev) => [
               ...prev,
               { role: 'assistant', content: pendingContent },
@@ -212,22 +229,28 @@ export default function ProblemDetailPage() {
               copy[copy.length - 1] = {
                 role: 'assistant',
                 content: pendingContent,
+                toolCalls:
+                  pendingToolCalls.length > 0
+                    ? [...pendingToolCalls]
+                    : undefined,
               }
               return copy
             })
           }
         } else if (event.type === 'tool_call') {
           setAgentStatus(`🔧 调用 ${event.call.name}...`)
-          // MVP：行内 emoji 标记表达 tool_call；M2b Phase 1b 换成卡片组件
-          const marker = `🔧 调用 ${event.call.name}...`
-          pendingContent = pendingContent
-            ? `${pendingContent}\n\n${marker}`
-            : marker
+          pendingToolCalls.push({
+            id: event.call.id,
+            name: event.call.name,
+            args: event.call.args,
+            status: 'pending',
+          })
           setMessages((prev) => {
             const copy = prev.slice()
             copy[copy.length - 1] = {
               role: 'assistant',
               content: pendingContent,
+              toolCalls: [...pendingToolCalls],
             }
             return copy
           })
@@ -235,22 +258,24 @@ export default function ProblemDetailPage() {
           setAgentStatus('📊 拿到结果,分析中...')
           const r = event.result as {
             success?: boolean
-            passCount?: number
-            total?: number
-            allPassed?: boolean
             error?: string
           }
-          const summary = r.success
-            ? r.allPassed
-              ? ` → ✓ 全部 ${r.total} 个用例通过`
-              : ` → ✗ ${r.passCount}/${r.total} 通过`
-            : ` → ⚠️ 执行错误: ${r.error ?? '未知'}`
-          pendingContent += summary
+          // 更新对应 call 的状态与结果
+          pendingToolCalls = pendingToolCalls.map((tc) =>
+            tc.id === event.callId
+              ? {
+                  ...tc,
+                  status: r.success === false ? 'error' : 'done',
+                  result: event.result,
+                }
+              : tc,
+          )
           setMessages((prev) => {
             const copy = prev.slice()
             copy[copy.length - 1] = {
               role: 'assistant',
               content: pendingContent,
+              toolCalls: [...pendingToolCalls],
             }
             return copy
           })
@@ -493,6 +518,13 @@ export default function ProblemDetailPage() {
                         <span className="ml-1 animate-pulse">▍</span>
                       )}
                   </div>
+                  {m.role === 'assistant' && m.toolCalls && m.toolCalls.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {m.toolCalls.map((tc) => (
+                        <ToolCallCard key={tc.id} call={tc} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -645,6 +677,71 @@ function HeightHandle({
         e.currentTarget.releasePointerCapture(e.pointerId)
       }}
     />
+  )
+}
+
+function ToolCallCard({ call }: { call: UIToolCall }) {
+  const [expanded, setExpanded] = useState(false)
+
+  const isPending = call.status === 'pending'
+  const isError = call.status === 'error'
+  const containerClass = isPending
+    ? 'border-zinc-700 bg-zinc-900/50'
+    : isError
+      ? 'border-red-500/40 bg-red-500/5'
+      : 'border-emerald-500/40 bg-emerald-500/5'
+  const icon = isPending ? '⏳' : isError ? '⚠️' : '✓'
+
+  // 摘要:根据 run_tests 结果 shape 提取通过数
+  const summary = (() => {
+    if (isPending) return '运行中...'
+    const r = call.result as
+      | {
+          success?: boolean
+          passCount?: number
+          total?: number
+          allPassed?: boolean
+          error?: string
+        }
+      | undefined
+    if (!r) return '?'
+    if (r.success === false) return `执行错误: ${r.error ?? '未知'}`
+    if (r.allPassed) return `全部 ${r.total} 个用例通过`
+    return `${r.passCount ?? 0}/${r.total ?? 0} 通过`
+  })()
+
+  return (
+    <div className={`rounded border ${containerClass} p-2 text-sm`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        disabled={isPending}
+        className="flex w-full items-center justify-between gap-2 text-left disabled:cursor-default"
+      >
+        <span className="flex items-center gap-2">
+          <span className={isPending ? 'animate-pulse' : ''}>{icon}</span>
+          <span className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs text-zinc-200">
+            {call.name}
+          </span>
+          <span className="text-zinc-400">·</span>
+          <span className="text-zinc-200">{summary}</span>
+        </span>
+        {!isPending && (
+          <span className="text-xs text-zinc-500">
+            {expanded ? '收起' : '展开'}
+          </span>
+        )}
+      </button>
+      {expanded && !isPending && (
+        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-zinc-950 p-2 text-xs leading-5 text-zinc-300">
+          {JSON.stringify(
+            { args: call.args, result: call.result },
+            null,
+            2,
+          )}
+        </pre>
+      )}
+    </div>
   )
 }
 
