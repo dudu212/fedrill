@@ -46,6 +46,12 @@ export default function ProblemDetailPage() {
   /** streaming 期间显示 AI 现在在做什么 · 状态栏用 */
   const [agentStatus, setAgentStatus] = useState<string | null>(null)
   const chatAbortRef = useRef<AbortController | null>(null)
+  /**
+   * 始终指向最新的 runTests 引用。Monaco 的 addCommand 只在 mount 时注册一次，
+   * 会捕获初次 render 时的陈旧 runTests（那时 code=''），导致 Ctrl+Enter 跑的是
+   * 空代码。用 ref 桥接一下，Monaco 里读 runTestsRef.current 永远拿到新鲜的。
+   */
+  const runTestsRef = useRef<() => void>(() => {})
 
   // Split ratios (percentages, 0-100)
   const [leftPct, setLeftPct] = useState(40)
@@ -139,6 +145,11 @@ export default function ProblemDetailPage() {
       setRunning(false)
     }
   }, [problem, code, running, repo])
+
+  // 把最新的 runTests 引用同步到 ref，Monaco 的 addCommand 才不会拿到陈旧闭包。
+  useEffect(() => {
+    runTestsRef.current = runTests
+  }, [runTests])
 
   const sendMessage = useCallback(async () => {
     if (!problem) return
@@ -429,7 +440,8 @@ export default function ProblemDetailPage() {
                   editor.addCommand(
                     monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
                     () => {
-                      runTests()
+                      // 走 ref，避免捕获陈旧的 runTests（那份闭包里 code = ''）
+                      runTestsRef.current()
                     },
                   )
                 }}
