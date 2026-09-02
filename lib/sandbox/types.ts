@@ -24,8 +24,9 @@ export type SandboxRequest = {
   code: string
   entryName: string
   cases: TestCase[]
+  nonce: string
 }
 
 export type SandboxResponse =
-  | { type: 'result'; results: TestResult[]; totalDurationMs: number }
-  | { type: 'error'; error: string }
+  | { type: 'result'; nonce: string; results: TestResult[]; totalDurationMs: number }
+  | { type: 'error'; nonce: string; error: string }

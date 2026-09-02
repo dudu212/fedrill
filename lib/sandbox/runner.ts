@@ -12,6 +12,7 @@ export async function runInSandbox(
   options: { timeoutMs?: number } = {},
 ): Promise<SandboxRunResult> {
   const timeoutMs = options.timeoutMs ?? 3000
+  const nonce = crypto.randomUUID()
   const worker = new Worker(new URL('./worker.ts', import.meta.url), {
     type: 'module',
   })
@@ -34,6 +35,7 @@ export async function runInSandbox(
 
     worker.onmessage = (e: MessageEvent<SandboxResponse>) => {
       const data = e.data
+      if (data.nonce !== nonce) return
       if (data.type === 'result') {
         finish(() =>
           resolve({
@@ -55,6 +57,7 @@ export async function runInSandbox(
       code,
       entryName,
       cases,
+      nonce,
     }
     worker.postMessage(request)
   })

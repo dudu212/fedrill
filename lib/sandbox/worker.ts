@@ -30,17 +30,19 @@ function reifyInput(v: unknown): unknown {
 
 ctx.onmessage = async (e: MessageEvent<SandboxRequest>) => {
   if (e.data.type !== 'run') return
-  const { code, entryName, cases } = e.data
+  const { code, entryName, cases, nonce } = e.data
 
   try {
     const factory = new Function(
-      `${code}\nreturn typeof ${entryName} !== 'undefined' ? ${entryName} : undefined`,
+      'self', 'postMessage', 'globalThis', 'importScripts',
+      `"use strict";\n${code}\nreturn typeof ${entryName} !== 'undefined' ? ${entryName} : undefined`,
     )
-    const fn = factory()
+    const fn = factory(undefined, undefined, undefined, undefined)
 
     if (typeof fn !== 'function') {
       const res: SandboxResponse = {
         type: 'error',
+        nonce,
         error: `未在用户代码中找到函数 "${entryName}"`,
       }
       ctx.postMessage(res)
@@ -77,6 +79,7 @@ ctx.onmessage = async (e: MessageEvent<SandboxRequest>) => {
 
     const res: SandboxResponse = {
       type: 'result',
+      nonce,
       results,
       totalDurationMs: performance.now() - t0,
     }
@@ -84,6 +87,7 @@ ctx.onmessage = async (e: MessageEvent<SandboxRequest>) => {
   } catch (err) {
     const res: SandboxResponse = {
       type: 'error',
+      nonce,
       error: err instanceof Error ? err.message : String(err),
     }
     ctx.postMessage(res)
