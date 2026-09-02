@@ -577,9 +577,13 @@ export default function ProblemDetailPage() {
                 <button
                   onClick={() => chatAbortRef.current?.abort()}
                   disabled={!streaming}
-                  className="rounded bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-700 disabled:opacity-30"
+                  className={`rounded px-3 py-1.5 text-sm font-medium disabled:opacity-40 ${
+                    streaming
+                      ? 'animate-pulse bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  }`}
                 >
-                  中断
+                  {streaming ? '⏹ 中断' : '中断'}
                 </button>
               </div>
             </div>
@@ -685,25 +689,39 @@ function ToolCallCard({ call }: { call: UIToolCall }) {
 
   const isPending = call.status === 'pending'
   const isError = call.status === 'error'
+
+  // 四档视觉:pending / error(tool 崩)/ partial(tool 跑成功但有测试挂)/ fullPass(全过)
+  // 这样"绿色 ✓" 才真正代表"没事",而"1/4 通过"会走琥珀,视觉上一眼看出要看
+  const r = call.result as
+    | {
+        success?: boolean
+        passCount?: number
+        total?: number
+        allPassed?: boolean
+        error?: string
+      }
+    | undefined
+  const isPartial =
+    !isPending && !isError && r?.success !== false && r?.allPassed === false
   const containerClass = isPending
     ? 'border-zinc-700 bg-zinc-900/50'
     : isError
       ? 'border-red-500/40 bg-red-500/5'
-      : 'border-emerald-500/40 bg-emerald-500/5'
-  const icon = isPending ? '⏳' : isError ? '⚠️' : '✓'
+      : isPartial
+        ? 'border-amber-500/50 bg-amber-500/10'
+        : 'border-emerald-500/40 bg-emerald-500/5'
+  const icon = isPending ? '⏳' : isError ? '⛔' : isPartial ? '✗' : '✓'
+  const iconColor = isPending
+    ? 'text-zinc-400'
+    : isError
+      ? 'text-red-300'
+      : isPartial
+        ? 'text-amber-300'
+        : 'text-emerald-300'
 
   // 摘要:根据 run_tests 结果 shape 提取通过数
   const summary = (() => {
     if (isPending) return '运行中...'
-    const r = call.result as
-      | {
-          success?: boolean
-          passCount?: number
-          total?: number
-          allPassed?: boolean
-          error?: string
-        }
-      | undefined
     if (!r) return '?'
     if (r.success === false) return `执行错误: ${r.error ?? '未知'}`
     if (r.allPassed) return `全部 ${r.total} 个用例通过`
@@ -719,7 +737,9 @@ function ToolCallCard({ call }: { call: UIToolCall }) {
         className="flex w-full items-center justify-between gap-2 text-left disabled:cursor-default"
       >
         <span className="flex items-center gap-2">
-          <span className={isPending ? 'animate-pulse' : ''}>{icon}</span>
+          <span className={`${iconColor} ${isPending ? 'animate-pulse' : ''}`}>
+            {icon}
+          </span>
           <span className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs text-zinc-200">
             {call.name}
           </span>
