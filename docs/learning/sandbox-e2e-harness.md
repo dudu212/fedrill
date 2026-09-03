@@ -189,10 +189,35 @@ FEDrill 目前未上线,这条 TODO 挂在 M4 上线清单。
 ## 六、进一步 · 想清楚了再加的功能
 
 - [ ] 上线前把 harness 页面在 production 屏蔽(M4 上线清单)
-- [ ] RT-02-06 断言体填充(Tier 3,人手写)
-- [ ] RT-03 决策路径 A(记录漏洞)/ B(修 worker 屏蔽 self.postMessage)
-- [ ] RT-05 结构化克隆超限后加大小上限(可能引发一份小 ADR)
-- [ ] 若 RT-06 显示 fetch 通了,评估 iframe sandbox / CSP / QuickJS-WASM 替代方案(M4 前)
+- [x] RT-02-06 断言体填充 · 2026-09-02 完成(6/6 全绿)
+- [x] RT-03 决策 · 走路径 B 修 worker.ts,双层防御闭环 · 见 [closure-shadow-and-nonce.md](closure-shadow-and-nonce.md)
+- [ ] RT-05 结构化克隆超限后加大小上限 · elapsed ~1.3s 暂无风险,不开 ADR
+- [ ] RT-06 fetch 敞口 · 实证成立(`blocked:Failed to fetch` 仅因端口不通),M4 前评估 iframe sandbox / CSP / QuickJS-WASM
+
+---
+
+## 七、后记 · Step 5 完整收官(2026-09-02)
+
+**从 3/6 到 6/6 · 关键节点**:
+
+1. RT-05 计时断言:elapsed ~1.3s,50MB 结构化克隆不构成风险,ADR 免开
+2. RT-06 fetch 实证:`blocked:Failed to fetch` —— 网络层因端口不通失败,不是浏览器安全策略拦,**敞口成立**,登记 M4
+3. **RT-03 从"待决策"到"闭环"**:选择路径 B(修 worker),不选 A(登记漏洞)。理由三条:
+   - 反正 M2 前也要修,现在修比记 TODO 心智负担小
+   - "防御纵深"比"登记漏洞"是**更高档次**的面试话术
+   - 沙盒代码理解此时最深,过一周回来还要重读
+
+**双层防御的技术要点**:
+- 层 1 · Closure Shadow(`new Function('self','postMessage',...)` + strict mode)—— 挡直接调用
+- 层 2 · Nonce(`crypto.randomUUID()` + 主线程 onmessage 校验)—— 挡元编程绕过
+
+**完整技术复盘**(STAR 结构)见 [closure-shadow-and-nonce.md](closure-shadow-and-nonce.md)。
+
+**Step 5 成果**:
+- 沙盒红队 6 类攻击面 · 6/6 全绿(9.5s)
+- 原 43 单测无回归
+- 2 处真漏洞:1 已修(RT-03)+ 1 已登记(RT-06)
+- 简历叙事从「测了沙盒」升级为「做了防御纵深并清楚边界」
 
 ---
 

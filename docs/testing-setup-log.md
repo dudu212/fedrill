@@ -1,14 +1,14 @@
 # 自动化测试栈落地日志
 
-> 日期:2026-08-28 → 2026-09-01(跨 3 次会话)
+> 日期:2026-08-28 → 2026-09-02(跨 4 次会话)
 >
-> 记录 FEDrill 从零到「Vitest + Playwright + MCP」齐活的完整过程,以及每一步的目的、验证方式、产物。将来自己回看能立即接上;新协作者读一遍就懂现在有什么、缺什么。
+> 记录 FEDrill 从零到「Vitest + Playwright + MCP + 沙盒红队」齐活的完整过程,以及每一步的目的、验证方式、产物。将来自己回看能立即接上;新协作者读一遍就懂现在有什么、缺什么。
 
 ---
 
 ## 一句话总结
 
-用四步搭起了「AI 项目专用」测试栈的骨架:**单测 → E2E → AI 驱动浏览器**,并在动手前写死了 [ADR-009](decisions/009-ai-test-autonomy-tiers.md) 三档风险分级,保证后续「谁改谁审」的决策不用每次现想。**Step 5 沙盒红队、Step 6 promptfoo eval 尚未落地**,是 M2 阶段的重点。
+用五步搭起了「AI 项目专用」测试栈的骨架:**单测 → E2E → AI 驱动浏览器 → 沙盒红队**,并在动手前写死了 [ADR-009](decisions/009-ai-test-autonomy-tiers.md) 三档风险分级,保证后续「谁改谁审」的决策不用每次现想。**Step 6 promptfoo eval 尚未落地**,是 M2 阶段的重点。
 
 ---
 
@@ -21,7 +21,7 @@
 | **Step 1-2** | Vitest + happy-dom + 3 条 co-located 单测 | Tier 1 基建 |
 | **Step 3** | [playwright.config.ts](../playwright.config.ts) + [smoke.spec.ts](../tests/e2e/smoke.spec.ts) + npm scripts | Tier 1 基建 |
 | **Step 4** | Playwright MCP 挂到用户级 `~/.claude.json` | Tier 1 基建 |
-| **Step 5** | ⏳ 沙盒红队用例(Vitest 里 `.security.test.ts`) | Tier 3 · 未开工 |
+| **Step 5** | ✅ 沙盒红队 6/6(Playwright + harness · RT-03 双层防御闭环) | Tier 3 · 已落地 |
 | **Step 6** | ⏳ promptfoo · Round 0 golden set | M2 才用力 |
 
 ---
@@ -144,6 +144,46 @@ claude mcp add playwright --scope user npx @playwright/mcp@latest
 
 ---
 
+### Step 5 · 沙盒红队 6 类攻击 · 6/6 全绿(2026-09-01 → 09-02)
+
+**做了什么**(按时间线):
+
+1. **诊断阶段**:扫 [lib/sandbox/runner.ts](../lib/sandbox/runner.ts) + [worker.ts](../lib/sandbox/worker.ts),识别 6 类攻击面(RT-01-06),标出 2 处真漏洞(RT-03 结果伪造、RT-06 fetch 出口)
+2. **环境迁移**:骨架先放 Vitest,跑第一条挂 `Worker is not defined` —— happy-dom 无 Web Worker。迁到 Playwright + [app/dev-sandbox-test/page.tsx](../app/dev-sandbox-test/page.tsx) harness 页面模式
+3. **五条实证型**(RT-01/02/04/05/06)按 Tier 3 手写断言,证实:
+   - `worker.terminate()` 对同步 + 异步循环都有效(RT-01/02)
+   - Chromium 每次 `new Worker` 独立 realm,`Object.prototype` 污染不跨 run(RT-04)
+   - 50MB structured clone 耗时可控(RT-05,elapsed ~1.3s,不开 ADR)
+   - fetch 敞口实证成立(RT-06,`blocked:Failed to fetch` 仅因端口不通,不是安全策略拦)
+4. **RT-03 双层防御闭环**:走路径 B —— 修 worker.ts 而非登记漏洞
+   - 层 1 · **Closure Shadow**:`new Function('self','postMessage','globalThis','importScripts', ...)` + `'use strict'`,用户 fn 内看到的 self/postMessage 都是 undefined
+   - 层 2 · **Nonce**:主线程 `crypto.randomUUID()` 生成,worker 内部所有 postMessage 附带,主线程 `onmessage` 校验不匹配丢弃
+   - 元编程绕 shadow 也白搭 —— nonce 拿不到
+
+**目的**:验证 [lib/sandbox/](../lib/sandbox/) 在恶意输入下守住底线,不是"跑起来了"就算数。
+
+**关键决策**(与调研 §3.5 对齐但环境迁移):
+- 用 Playwright + harness 而非 happy-dom + Vitest,因为 Web Worker 语义只有真浏览器有
+- RT-03 走「修复」而非「登记」,产出**防御纵深** face 面试话术
+
+**验证**:
+- `pnpm test:e2e sandbox-redteam --reporter=list` → 6 passed (9.5s)
+- `pnpm test` → 43 passed(shadow 未误伤 5 道预置题)
+
+**产物**:
+- [tests/e2e/sandbox-redteam.spec.ts](../tests/e2e/sandbox-redteam.spec.ts) —— 6 条红队
+- [app/dev-sandbox-test/page.tsx](../app/dev-sandbox-test/page.tsx) —— harness
+- [lib/sandbox/{types,runner,worker}.ts](../lib/sandbox/) —— 双层防御修改
+- [docs/learning/sandbox-e2e-harness.md](learning/sandbox-e2e-harness.md) —— 环境迁移知识点
+- [docs/learning/closure-shadow-and-nonce.md](learning/closure-shadow-and-nonce.md) —— RT-03 双层防御 STAR 复盘
+
+**已知边界**(诚实登记):
+- Shadow 只挡直接调用,元编程(`Function('return this')()`)能绕过 —— 靠 nonce 兜底
+- fetch 敞口未修,登记 M4 上线前必修(iframe sandbox / CSP / QuickJS-WASM 三选一)
+- harness 页面需在 production 屏蔽 —— M4 上线清单
+
+---
+
 ## 现在的能力盘点
 
 ### 能做
@@ -152,29 +192,18 @@ claude mcp add playwright --scope user npx @playwright/mcp@latest
 - ✅ 改交互后跑一遍冒烟 → `pnpm test:e2e` <10s 双绿
 - ✅ 让 AI 用 Playwright MCP 探索 UI、复现 bug、验收流程
 - ✅ 用 ADR-009 三档 Tier 决定「这次让 AI 修不修」
+- ✅ **验证沙盒 6 类攻击面 —— 结果伪造已修,fetch 敞口已登记**
 
 ### 还不能做
 
-- ❌ **验证沙盒安全**——`lib/sandbox/` 只有 `deep-equal.test.ts`,没有红队用例(死循环 / 内存爆 / 原型链 / 全局污染)
 - ❌ **量化 LLM 输出质量**——Round 0-4 追问 prompt 变了没有 baseline 对比,靠人肉眼睛
 - ❌ **拦 Route Handler 里的 LLM 调用**——集成测试还没有 MSW,`/api/chat` 只能真调 DeepSeek 才能测
 - ❌ **视觉回归**——Monaco 排版、chat 气泡样式改坏了没测试守
+- ❌ **元编程级沙盒逃逸**——shadow + nonce 挡 90% 但非 100%,彻底方案要等 M3/M4 换 QuickJS-WASM
 
 ---
 
 ## 下一步
-
-### Step 5 · 沙盒红队用例(**Tier 3 · 人手写**)
-
-**目标**:验证 [lib/sandbox/](../lib/sandbox/) 在 6 类恶意输入下都能守住底线。
-
-**流程**:
-1. AI 先扫 `runner.ts` + `worker.ts` 摸清当前的 kill 机制
-2. AI 列出 6 条红队用例的**断言逻辑**(每条要测什么、期望结果)
-3. AI 给**代码骨架**(空断言体)
-4. **每条用例的实现由人亲手写**——按 ADR-009 Tier 3 规矩,AI 修沙盒 bug 容易让测试过但没堵变种
-
-**必测的 6 类**:死循环、内存爆、全局污染、原型链攻击、试图访问 window、超长输出淹没 SSE。
 
 ### Step 6 · promptfoo · Round 0 golden set(M2 才用力)
 

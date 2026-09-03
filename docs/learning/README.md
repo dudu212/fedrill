@@ -38,6 +38,7 @@
 ### 横切 · Testing & Quality
 - [x] [`ai-testing-interview.md`](ai-testing-interview.md) —— AI 项目测试面试题 22 问（Vitest / Playwright / promptfoo / 沙盒 / Agent eval / 成本观测）
 - [x] [`sandbox-e2e-harness.md`](sandbox-e2e-harness.md) —— happy-dom 无 Worker 翻车 → Playwright + harness 页面迁移;含 test harness / page.evaluate / structured clone / Next 私有目录等 6 个知识点
+- [x] [`closure-shadow-and-nonce.md`](closure-shadow-and-nonce.md) —— RT-03 结果伪造双层防御 · STAR 结构复盘 · Closure Shadow + Nonce 通用范式
 
 ### 横切 · Frontend Integration
 - [x] [`stale-closure-latest-ref.md`](stale-closure-latest-ref.md) —— React + 命令式 API 集成的通用陷阱与 latest ref pattern（从 Monaco Ctrl+Enter 修 bug 沉淀 · 覆盖 setInterval / WebSocket / addEventListener 等场景）
