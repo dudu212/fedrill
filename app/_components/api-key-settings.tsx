@@ -47,14 +47,18 @@ export function ApiKeySettings() {
       <button
         type="button"
         onClick={openModal}
-        className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+        className={`rounded-md text-sm font-medium transition-all ${
           hasKey
-            ? 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25'
-            : 'animate-pulse bg-amber-500/20 text-amber-200 hover:bg-amber-500/30'
+            ? 'border border-emerald-500/50 bg-emerald-500/15 px-3 py-1 text-xs text-emerald-200 hover:bg-emerald-500/25'
+            : 'animate-pulse border border-amber-400 bg-amber-500 px-4 py-1.5 text-zinc-950 shadow-lg shadow-amber-500/40 hover:bg-amber-400'
         }`}
-        title={hasKey ? 'DeepSeek API Key 已配置' : '需要配置 DeepSeek API Key 才能对话'}
+        title={
+          hasKey
+            ? 'DeepSeek API Key 已配置 · 点击可修改'
+            : '⚠ 需先配置 DeepSeek API Key 才能对话 · 点击这里'
+        }
       >
-        {hasKey ? '⚙ API Key ✓' : '⚙ 需配置 API Key'}
+        {hasKey ? '⚙ API Key ✓' : '⚠ 点这里配置 API Key'}
       </button>
 
       {open && (
