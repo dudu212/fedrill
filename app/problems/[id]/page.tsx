@@ -18,6 +18,7 @@ import { buildRound0SystemPrompt } from '@/lib/agent/round0-prompt'
 import { buildRound1SystemPrompt } from '@/lib/agent/round1-prompt'
 import { runAgentLoop } from '@/lib/agent/loop'
 import type { ProviderMessage } from '@/lib/llm/types'
+import { ApiKeySettings } from '@/app/_components/api-key-settings'
 import {
   getSessionRepo,
   type SessionMessage,
@@ -359,6 +360,7 @@ export default function ProblemDetailPage() {
           >
             Round {currentRound} · {currentRound === 0 ? '基础实现' : '边界追问'}
           </span>
+          <ApiKeySettings />
         </div>
       </header>
 

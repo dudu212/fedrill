@@ -4,6 +4,7 @@ import type {
   ProviderToolCall,
   ProviderToolSpec,
 } from '@/lib/llm/types'
+import { getApiKey } from '@/lib/settings/api-key'
 import { executeRunTests, runTestsToolSpec } from './tools/run-tests'
 
 /**
@@ -180,9 +181,14 @@ interface FetchAgentStepOpts {
 async function* fetchAgentStep(
   opts: FetchAgentStepOpts,
 ): AsyncGenerator<ProviderChunk> {
+  // BYOK · client 自带 API key,通过 header 送到无状态 route,再透传到 DeepSeek
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const apiKey = getApiKey()
+  if (apiKey) headers['x-deepseek-api-key'] = apiKey
+
   const res = await fetch(AGENT_STEP_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ messages: opts.messages, tools: opts.tools }),
     signal: opts.signal,
   })

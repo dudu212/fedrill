@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 import type { ChatMessage } from '@/lib/types/problem'
+import { getApiKey } from '@/lib/settings/api-key'
+import { ApiKeySettings } from '@/app/_components/api-key-settings'
 
 type WireMessage = Pick<ChatMessage, 'role' | 'content'>
 
@@ -29,9 +31,15 @@ export default function ChatDemoPage() {
     abortRef.current = ac
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      const apiKey = getApiKey()
+      if (apiKey) headers['x-deepseek-api-key'] = apiKey
+
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...nextMessages],
         }),
@@ -81,11 +89,14 @@ export default function ChatDemoPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-8">
-      <header>
-        <h1 className="text-2xl font-bold">Chat Demo · F-004</h1>
-        <p className="text-sm text-zinc-500">
-          验证 <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">/api/chat</code> 流式端到端 · 0 依赖手写 SSE 解析
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Chat Demo · F-004</h1>
+          <p className="text-sm text-zinc-500">
+            验证 <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">/api/chat</code> 流式端到端 · 0 依赖手写 SSE 解析
+          </p>
+        </div>
+        <ApiKeySettings />
       </header>
 
       <section className="flex min-h-[400px] flex-1 flex-col gap-3 rounded border border-zinc-800 p-4">

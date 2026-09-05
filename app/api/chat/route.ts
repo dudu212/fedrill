@@ -47,9 +47,15 @@ export async function POST(request: Request) {
     messages = withSystemPrompt(messages, systemPrompt)
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  // BYOK · 演示站访客通过 header 传自己的 key,优先于 env
+  const userApiKey =
+    request.headers.get('x-deepseek-api-key')?.trim() || undefined
+  const apiKey = userApiKey ?? process.env.DEEPSEEK_API_KEY
   if (!apiKey) {
-    return new Response('DEEPSEEK_API_KEY missing in env', { status: 500 })
+    return new Response(
+      'DEEPSEEK_API_KEY missing · 需要在 env 里配,或者 client 通过 x-deepseek-api-key header 传(BYOK)',
+      { status: 500 },
+    )
   }
 
   const upstream = await fetch(DEEPSEEK_URL, {

@@ -39,6 +39,10 @@ export async function POST(request: Request) {
 
   const encoder = new TextEncoder()
 
+  // BYOK · 演示站访客通过 header 传自己的 key,优先于 env
+  const userApiKey =
+    request.headers.get('x-deepseek-api-key')?.trim() || undefined
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
@@ -48,6 +52,7 @@ export async function POST(request: Request) {
           temperature: body.temperature,
           model: body.model,
           signal: request.signal,
+          apiKey: userApiKey,
         })
         for await (const chunk of chunks) {
           const payload = `data: ${JSON.stringify(chunk)}\n\n`

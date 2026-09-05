@@ -48,9 +48,11 @@ interface PendingToolCall {
 export async function* deepseekStream(
   opts: StreamOptions,
 ): AsyncGenerator<ProviderChunk> {
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = opts.apiKey ?? process.env.DEEPSEEK_API_KEY
   if (!apiKey) {
-    throw new Error('DEEPSEEK_API_KEY missing in env')
+    throw new Error(
+      'DEEPSEEK_API_KEY missing · 需要在 env 里配,或者 client 通过 x-deepseek-api-key header 传(BYOK)',
+    )
   }
 
   const body: Record<string, unknown> = {

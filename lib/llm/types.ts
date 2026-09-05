@@ -81,6 +81,12 @@ export interface StreamOptions {
   model?: string
   /** 端到端可断（透传给 fetch，直达上游 LLM 请求） */
   signal?: AbortSignal
+  /**
+   * 覆盖 env 里的 API key（BYOK · 演示站访客自带 key,零成本给作者运营）。
+   * 优先级:opts.apiKey > process.env.DEEPSEEK_API_KEY。
+   * 本地 dev 可以只配 env 不传参;prod 上线走 BYOK 时由 client 传进来。
+   */
+  apiKey?: string
 }
 
 /**
