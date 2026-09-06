@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Editor from '@monaco-editor/react'
+import '@/lib/monaco/init'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult } from '@/lib/sandbox/types'
 

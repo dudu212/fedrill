@@ -49,3 +49,6 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 /.playwright-mcp/
+
+# Monaco Editor 自宿主 · 由 scripts/copy-monaco.mjs postinstall 生成
+/public/monaco/

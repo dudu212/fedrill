@@ -11,6 +11,7 @@ import {
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Editor from '@monaco-editor/react'
+import '@/lib/monaco/init'
 import { categoryLabels, getProblem } from '@/data/problems'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult, TestResult } from '@/lib/sandbox/types'
