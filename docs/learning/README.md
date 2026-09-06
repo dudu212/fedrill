@@ -42,3 +42,6 @@
 
 ### 横切 · Frontend Integration
 - [x] [`stale-closure-latest-ref.md`](stale-closure-latest-ref.md) —— React + 命令式 API 集成的通用陷阱与 latest ref pattern（从 Monaco Ctrl+Enter 修 bug 沉淀 · 覆盖 setInterval / WebSocket / addEventListener 等场景）
+
+### 横切 · Security
+- [x] [`byok-security-model.md`](byok-security-model.md) —— 零信任 BYOK · CORS 实测 + Client-direct 架构 + XSS 4 层防御 + CSP 落地 · STAR 结构复盘
