@@ -52,3 +52,4 @@ next-env.d.ts
 
 # Monaco Editor 自宿主 · 由 scripts/copy-monaco.mjs postinstall 生成
 /public/monaco/
+tests/eval/last-result.json
