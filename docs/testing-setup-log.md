@@ -22,7 +22,7 @@
 | **Step 3** | [playwright.config.ts](../playwright.config.ts) + [smoke.spec.ts](../tests/e2e/smoke.spec.ts) + npm scripts | Tier 1 基建 |
 | **Step 4** | Playwright MCP 挂到用户级 `~/.claude.json` | Tier 1 基建 |
 | **Step 5** | ✅ 沙盒红队 6/6(Playwright + harness · RT-03 双层防御闭环) | Tier 3 · 已落地 |
-| **Step 6** | ⏳ promptfoo · Round 0 golden set | M2 才用力 |
+| **Step 6** | ✅ promptfoo Round 0 golden set 5 条 · baseline 4-5/5 · 挖到 prompt 优先级冲突 | Tier 3 · 已落地(M2 铺开) |
 
 ---
 
