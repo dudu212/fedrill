@@ -12,6 +12,21 @@ import { ApiKeySettings } from '@/app/_components/api-key-settings'
 
 const CATEGORIES: ImplCategory[] = ['async', 'prototype', 'util', 'pattern']
 
+/**
+ * hover 题目卡片时预加载 Monaco 主脚本 · 用户点进去前 Monaco 已在缓存里,首屏 0 等待。
+ * 幂等:如果已 prefetch 过就跳过。
+ */
+function prefetchMonaco(): void {
+  if (typeof window === 'undefined') return
+  if (document.head.querySelector('link[data-monaco-prefetch]')) return
+  const link = document.createElement('link')
+  link.rel = 'prefetch'
+  link.as = 'script'
+  link.href = '/monaco/vs/loader.js'
+  link.setAttribute('data-monaco-prefetch', '1')
+  document.head.appendChild(link)
+}
+
 const difficultyStyle: Record<string, string> = {
   easy: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
   medium: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
@@ -71,6 +86,8 @@ export default function ProblemsListPage() {
           <Link
             key={p.id}
             href={`/problems/${p.id}`}
+            onMouseEnter={prefetchMonaco}
+            onFocus={prefetchMonaco}
             className="group flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4 transition hover:border-blue-500/60 hover:bg-zinc-900"
           >
             <div className="flex items-start justify-between gap-2">

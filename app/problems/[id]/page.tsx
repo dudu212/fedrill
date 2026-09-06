@@ -460,8 +460,12 @@ export default function ProblemDetailPage() {
                 onChange={(v) => setCode(v ?? '')}
                 theme="vs-dark"
                 loading={
-                  <div className="flex h-full items-center justify-center text-sm text-zinc-500">
-                    Monaco 加载中…
+                  <div className="h-full space-y-2 bg-[#1e1e1e] p-4 font-mono text-sm">
+                    <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-800" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-zinc-800" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
+                    <div className="mt-4 text-xs text-zinc-600">Monaco 加载中…</div>
                   </div>
                 }
                 onMount={(editor, monaco) => {
