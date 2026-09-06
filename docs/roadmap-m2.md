@@ -98,25 +98,37 @@
 - 错误处理：tool 失败**不 throw**，标准化错误 shape 塞回 LLM
 - Trace / Observability：每步 timestamp / tokens / tool_result
 
-### Phase 1c · 打磨 + 简历定稿（09/13–09/15，3 天）
+### Phase 1c · 打磨 + 上线 + 简历定稿(09/02–09/06,✅ 主体完成 · 提前 9 天)
 
-**目标**：锁定版本、简历亮点定稿、demo 就绪。
+**目标**:上线可访问版本、简历亮点定稿。**已达成:Vercel 上线 fedrill.vercel.app + 零信任 BYOK + Trace UI 卡片化**。
 
-**任务清单**：
+**任务清单**:
 
-- [ ] 边界 bug 打磨（`context.length` 溢出、tool 参数校验、abort 时的清理）
-- [ ] 更新 [README.md](../README.md) 的"当前进度"和"简历亮点"两节
-- [ ] 录一段 30–60 秒 demo（Round 0 挂 → AI 触发 run_tests → 用户改 → 全过 → Round 1 反问）
-- [ ] 写一篇 [docs/learning/agent-loop-implementation.md](learning/agent-loop-implementation.md)（1000-2000 字，M2 学习沉淀）
+- [x] Trace UI 卡片化 · 4 档状态(pending / partial 琥珀 / fullPass 绿 / error 红)
+- [x] Monaco Ctrl+Enter stale closure 修复 · Latest Ref Pattern 学习笔记
+- [x] Vercel 上线 · [fedrill.vercel.app](https://fedrill.vercel.app)
+- [x] BYOK · 访客自带 DeepSeek API Key
+- [x] **零信任 BYOK · 浏览器 CORS 直连 DeepSeek**(源上线本来是 M5,提前到 Phase 1c 落地)
+- [x] README · 简历亮点定稿 + 在线体验链接 + 信任模型说明
+- [ ] (可选)Monaco 慢加载优化(dynamic import + prefetch)· M2b 处理
+- [ ] (可选)Demo GIF · 最终投简历前一周录一次
+- [ ] (可选)写 [docs/learning/agent-loop-implementation.md](learning/agent-loop-implementation.md)(1000-2000 字 · M2 学习沉淀)
 
-**学习焦点**：
+**超原计划的额外产出**:
 
-- 复习：把 Agent Loop / SessionRepo / Round 状态机的实现细节讲一遍给自己听（能自然讲出就到位）
-- 面试话术准备：
-  - "你的 Agent Loop 怎么实现的？"
-  - "为什么不用 LangChain？"
-  - "tool 失败了 LLM 怎么知道？"
-  - "如何防止无限 loop？"
+- **零信任 BYOK 架构**(原本 M5 才做的"上线"提前 · 且比原方案更好)
+- ADR-011 客户端 Agent Loop · Latest Ref Pattern 学习笔记 · tool-use-and-react 概念铺垫笔记
+
+**学习焦点**:
+
+- 复习:把 Agent Loop / SessionRepo / Round 状态机的实现细节讲一遍给自己听
+- 面试话术准备:
+  - "你的 Agent Loop 怎么实现的?"
+  - "为什么不用 LangChain?"
+  - "tool 失败了 LLM 怎么知道?"
+  - "如何防止无限 loop?"
+  - "BYOK 的信任模型你怎么设计?"(← 新增)
+  - "CORS 是什么?为什么大多数 LLM 不允许浏览器直调?"(← 新增)
 
 **→ 【2026-09-15 · 锁 M2a】**
 
@@ -136,8 +148,8 @@
 | --- | --- | --- | --- | --- |
 | 08/27–08/29（Ph0） | 地基：ADR + Repo + 测试 | 入门 · JSON Schema / tool_use / ReAct | 5 份 ADR + SessionRepo + 43 条测试 + Playwright 骨架 | ✅ |
 | 08/30–09/01（Ph1a） | Agent Loop v1 + `run_tests` | 进阶 · while+max_iter / streaming 分类 | 端到端跑通 · 状态栏 · 语义一致 | ✅ **提前 4 天** |
-| 09/02–09/12（Ph1b） | Trace UI 卡片化 + Round 1 prompt | 进阶 · tool design / error shape / trace | 至少 1 道题两 Round 端到端 | 🔴 冲刺中 |
-| 09/13–09/15（Ph1c） | 打磨 + 简历定稿 + demo | 复习 · 面试话术 | Demo 视频 + README 定稿 | ⏭️ |
+| 09/02–09/02（Ph1b） | Round 1 prompt + Trace UI 卡片化 | 进阶 · Latest Ref Pattern | Round 0→1 端到端 + tool card 4 态 | ✅ **提前 10 天** |
+| 09/02–09/06（Ph1c） | Vercel 上线 + 零信任 BYOK + README 定稿 | CORS + 信任模型 | fedrill.vercel.app 上线 · Key 不上服务端 | ✅ **提前 9 天** |
 | **09/15 锁 M2a** | | | 简历三条硬亮点定型 | 🎯 |
 | 秋招投递后（Ph2） | M2b 加分区 | 精通 · Event Loop Engineering | 无死线 | ⏸ |
 

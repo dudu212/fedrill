@@ -40,10 +40,18 @@ FEDrill 是一个**前端求职者训练平台**，用 AI 模拟面试官对你�
 - **Streaming 状态栏**：`🤔 思考 → 🔧 调用工具 → 📊 分析结果 → ✍️ 生成回复`，AI 每一步动作对用户可见
 - **语义一致性**：AI 触发跑测试与用户点"运行"按钮的可见效果完全一致
 
-**M2a 剩余里程**（09/15 硬锁前）：
+**M2a Phase 1b + 1c** ✅ 主体完成
 
-- Phase 1b · Trace UI 卡片化 + Round 1 边界追问 prompt
-- Phase 1c · demo 视频 + 简历定稿
+- Trace UI 卡片化 · pending / partial(琥珀)/ fullPass(绿)/ error(红)四态 · 可展开看 tool 内幕 JSON
+- Round 1 边界追问 prompt · 客户端按 `currentRound` 派生切 prompt
+- Vercel 上线 · [fedrill.vercel.app](https://fedrill.vercel.app)
+- BYOK(Bring Your Own Key)· 零成本运营模式
+- **零信任 BYOK · 浏览器 CORS 直连 DeepSeek · Key 技术上不可能上服务端**
+
+**M2a 剩余小尾巴**(可选):
+
+- Monaco 慢加载优化(dynamic import + prefetch)
+- 简历亮点最终 review + demo GIF(如果需要)
 
 详细路线见 [docs/roadmap-m2.md](docs/roadmap-m2.md) —— M2 冲刺单一事实源。
 
@@ -125,9 +133,23 @@ pnpm dev
 
 11 份 ADR 覆盖：SDK 层（001/002/004）· 判题层（006）· 测试策略（009/010）· Agent 架构（011）等。**"拒绝一把梭抽象"** 是贯穿全项目的技术叙事。
 
-## Demo
+## Demo · 在线体验
 
-（Phase 1c 完成后补 · 30 秒 GIF）
+🌐 **[fedrill.vercel.app](https://fedrill.vercel.app)** —— BYOK 模式,访客自带 DeepSeek API Key
+
+推荐路径:
+
+- [/problems/deep-clone](https://fedrill.vercel.app/problems/deep-clone) —— 手撕深拷贝 · Round 0 → 1 全流程
+- [/problems](https://fedrill.vercel.app/problems) —— 全 5 道预置题
+- [/chat-demo](https://fedrill.vercel.app/chat-demo) —— 裸对话调试口(验证 SSE)
+
+### 🔒 零信任 BYOK
+
+BYOK(Bring Your Own Key)是我的**零成本运营策略**——访客用自己的 DeepSeek API Key,我一分钱不花。但通常 BYOK 有个信任问题:"我的 Key 会不会被服务端偷偷 log?"
+
+**FEDrill 的解法**:测得 DeepSeek 允许浏览器直接 CORS 调用,所以在 BYOK 模式下**让浏览器绕过我的服务器,直接向 `api.deepseek.com` 发请求**。你的 Key 从头到尾只在你自己的浏览器和 DeepSeek 官方之间流转 —— **技术上不可能被我 log**。
+
+实现在 [`lib/agent/loop.ts`](lib/agent/loop.ts) 的 `fetchAgentStep`:检测到 localStorage 里有 Key 就走 `deepseekStream` 直连,否则走 `/api/agent/step` 服务端代理(本地开发用 `.env.local` 兜底)。
 
 ## License
 
