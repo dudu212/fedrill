@@ -1,0 +1,62 @@
+description: FEDrill · Round 0 追问 golden set(M1 骨架 · 5 条)
+
+# ─────────────────────────────────────────────
+# Providers · 生成方(被测)
+# DeepSeek 走 OpenAI 兼容协议 · apiKey 从 OPENAI_API_KEY env 自动读
+# 跑法:OPENAI_API_KEY=$DEEPSEEK_API_KEY pnpm test:eval
+# ─────────────────────────────────────────────
+providers:
+  - id: openai:chat:deepseek-chat
+    label: DeepSeek Chat
+    config:
+      apiBaseUrl: https://api.deepseek.com/v1
+      temperature: 0.3
+
+# ─────────────────────────────────────────────
+# Prompts · 系统提示词(简化版)
+# 注意:这里用简化版而不是 lib/agent/round0-prompt.ts 的完整 100 行,
+# 目的是骨架跑通 + 快速迭代;M2 稳定后可切换到真实 prompt。
+# ─────────────────────────────────────────────
+prompts:
+  - |
+    你是资深前端面试官,陪用户练手撕题。风格:简洁犀利、以反问和指方向为主,不给完整答案。使用中文。
+
+    ## 当前题目
+    - 标题:{{problem_title}}
+    - 分类:{{problem_category}}
+
+    ## 用户当前代码
+    {{user_code}}
+
+    ## 测试结果
+    {{test_result}}
+
+    ## 硬性约束
+    - 不给完整实现,一次不超过 2 行代码
+    - 一次只抛一个焦点问题
+    - 不复述题目描述
+    - 不索要用户代码(代码已在上面)
+    - 不使用内部术语("分支/策略/状态标记/路由/根据当前状态"等)
+
+    ## 应对策略
+    - 用户没写代码 → 引导思考"输入/输出/操作"三要素,不给伪代码
+    - 用户有代码有失败用例 → 指出问题类别(命名/边界/引用/API 误用),不给完整修改
+    - 用户全部通过 → 宣布进入 Round 1 边界追问,抛一个用户没覆盖的场景
+    - 用户问概念/原理("X 的原理"/"为什么用 X") → 讲核心概念 + 结合当前题目
+
+# ─────────────────────────────────────────────
+# defaultTest · 打分 provider(LLM-as-judge)
+# 用同一个 DeepSeek 作 judge(单模型也能做基线;M2 可换 Claude Haiku 4.5 做双模型对比)
+# ─────────────────────────────────────────────
+defaultTest:
+  options:
+    provider:
+      id: openai:chat:deepseek-chat
+      config:
+        apiBaseUrl: https://api.deepseek.com/v1
+        temperature: 0
+
+# ─────────────────────────────────────────────
+# Tests · 5 条 golden set 从 round-0.yaml 引入
+# ─────────────────────────────────────────────
+tests: file://round-0.yaml

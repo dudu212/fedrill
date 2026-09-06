@@ -1,0 +1,96 @@
+# FEDrill · Round 0 追问 golden set · 5 条骨架
+# 由 promptfooconfig.yaml 的 tests: file:// 引入
+#
+# 断言组合(每条):
+#   - llm-rubric · 主要质量断言(用 DeepSeek 打分)
+#   - not-contains · 硬性词汇拦截(元语言词、索要代码等)
+#
+# 跑法:pnpm test:eval
+
+- description: RT-P1 · 用户还没写代码 · 求解答
+  vars:
+    problem_title: 手写 Promise.all
+    problem_category: 异步控制
+    user_code: (用户尚未写任何代码)
+    test_result: (尚未运行测试)
+    user_message: 这个 Promise.all 怎么做?
+  assert:
+    - type: llm-rubric
+      value: 回复应通过反问或提问引导用户思考(如问输入/输出/操作三要素其一),不能直接给出 Promise.all 的完整实现代码
+    - type: not-contains
+      value: 分支
+    - type: not-contains
+      value: 路由
+
+- description: RT-P2 · 用户问原理 · 概念型问题
+  vars:
+    problem_title: 手写 Promise.all
+    problem_category: 异步控制
+    user_code: (用户尚未写任何代码)
+    test_result: (尚未运行测试)
+    user_message: Promise.all 的原理是什么?
+  assert:
+    - type: llm-rubric
+      value: 回复应讲解 Promise.all 的核心概念(至少提到"并发"、"聚合结果"、"任一 reject 短路"三点中的一点),允许结合当前手撕场景,但不给完整实现代码
+
+- description: RT-P3 · 代码有部分测试失败 · 索要代码硬拦
+  vars:
+    problem_title: 手写 Promise.all
+    problem_category: 异步控制
+    user_code: |
+      function myPromiseAll(arr) {
+        return new Promise((resolve, reject) => {
+          const results = []
+          arr.forEach((p, i) => {
+            p.then(v => {
+              results[i] = v
+              if (results.length === arr.length) resolve(results)
+            }, reject)
+          })
+        })
+      }
+    test_result: |
+      ❌ 3/5 通过。未通过:
+      - ✗ 空数组用例 · 输入 [] · 期望 [] · 实际 (超时)
+      - ✗ 有 reject 用例 · 输入 [Promise.resolve(1), Promise.reject('err')] · 运行错误: err
+    user_message: 看看我的代码
+  assert:
+    - type: llm-rubric
+      value: 回复应指出至少一个具体问题类别(如空数组处理、length 与 index 不匹配导致计数错、reject 后未终止等),不索要用户代码(代码已在上下文),不给完整修改后的实现
+    - type: not-contains
+      value: 贴一下代码
+    - type: not-contains
+      value: 把代码发出来
+    - type: not-contains
+      value: 发一下代码
+
+- description: RT-P4 · 代码全部通过 · 用户问下一步
+  vars:
+    problem_title: 手写 Promise.all
+    problem_category: 异步控制
+    user_code: |
+      function myPromiseAll(arr) { /* 正确实现 */ }
+    test_result: ✅ 全部 5 个基础用例通过(耗时 12ms)
+    user_message: 都过了,接下来呢?
+  assert:
+    - type: llm-rubric
+      value: 回复应确认基础实现通过并进入边界追问,抛出至少一个 Promise.all 边界深挖问题(如空数组、非 Promise 值、iterable 兼容、并发数控制、错误处理时机等)
+
+- description: RT-P5 · 反元语言词汇 · 硬性拦截
+  vars:
+    problem_title: 手写 Promise.all
+    problem_category: 异步控制
+    user_code: (用户尚未写任何代码)
+    test_result: (尚未运行测试)
+    user_message: 怎么开始?
+  assert:
+    - type: llm-rubric
+      value: 回复应像自然的面试官对话,不能出现"根据当前状态"、"进入 X 分支"、"元语言指引"、"状态标记"、"内部判断"这类元语言词汇
+    - type: not-contains
+      value: 分支
+    - type: not-contains
+      value: 路由
+    - type: not-contains
+      value: 状态标记
+    - type: not-contains
+      value: 内部判断

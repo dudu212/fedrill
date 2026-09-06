@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:eval": "node --env-file=.env.local scripts/eval-runner.mjs",
     "postinstall": "node scripts/copy-monaco.mjs"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "happy-dom": "^20.11.10",
+    "promptfoo": "^0.122.2",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
