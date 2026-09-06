@@ -85,12 +85,25 @@ export function ApiKeySettings() {
                 本站采用 <strong className="text-zinc-200">BYOK</strong>(Bring Your Own Key)
                 模式,零成本运营 —— 你需要用自己的 DeepSeek API Key 才能和 AI 对话。
               </p>
-              <p>
-                Key 只保存在你自己浏览器的 <code className="rounded bg-zinc-800 px-1">localStorage</code>,
-                不上传到任何第三方(除了 DeepSeek 官方 API,通过本站服务端 SSE 代理转发)。
+              <p className="rounded border border-emerald-500/30 bg-emerald-500/5 p-2 text-emerald-200">
+                <strong>🔒 零信任 BYOK</strong> · 你输入 Key 之后,浏览器**直接调用 DeepSeek 官方 API**
+                (通过 CORS)—— 请求完全**不经过本站服务器**,你的 Key 永远只在你自己的浏览器和 DeepSeek 之间。
               </p>
               <p>
-                没有?去{' '}
+                Key 保存在浏览器 <code className="rounded bg-zinc-800 px-1">localStorage</code>,
+                不上传任何第三方。想验证?
+                <a
+                  href="https://github.com/dudu212/fedrill/blob/main/lib/agent/loop.ts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-blue-400 underline hover:text-blue-300"
+                >
+                  查看源码 loop.ts
+                </a>
+                —— 你会看到 <code className="rounded bg-zinc-800 px-1">deepseekStream</code> 是浏览器直调的。
+              </p>
+              <p>
+                没有 Key?去{' '}
                 <a
                   href="https://platform.deepseek.com/api_keys"
                   target="_blank"

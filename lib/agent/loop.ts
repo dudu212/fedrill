@@ -4,6 +4,7 @@ import type {
   ProviderToolCall,
   ProviderToolSpec,
 } from '@/lib/llm/types'
+import { deepseekStream } from '@/lib/llm/deepseek'
 import { getApiKey } from '@/lib/settings/api-key'
 import { executeRunTests, runTestsToolSpec } from './tools/run-tests'
 
@@ -181,10 +182,21 @@ interface FetchAgentStepOpts {
 async function* fetchAgentStep(
   opts: FetchAgentStepOpts,
 ): AsyncGenerator<ProviderChunk> {
-  // BYOK · client 自带 API key,通过 header 送到无状态 route,再透传到 DeepSeek
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  // BYOK · 客户端有 key → 直接调 DeepSeek(浏览器 CORS 通),
+  // 请求完全不经过我们的服务器,key 永不落地。
   const apiKey = getApiKey()
-  if (apiKey) headers['x-deepseek-api-key'] = apiKey
+  if (apiKey) {
+    yield* deepseekStream({
+      messages: opts.messages,
+      tools: opts.tools,
+      signal: opts.signal,
+      apiKey,
+    })
+    return
+  }
+
+  // 回退 · 没有 BYOK key(通常是本地 dev 用 .env.local)· 走服务端代理
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
 
   const res = await fetch(AGENT_STEP_ENDPOINT, {
     method: 'POST',
