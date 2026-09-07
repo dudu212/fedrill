@@ -23,6 +23,7 @@
 | **Step 4** | Playwright MCP 挂到用户级 `~/.claude.json` | Tier 1 基建 |
 | **Step 5** | ✅ 沙盒红队 6/6(Playwright + harness · RT-03 双层防御闭环) | Tier 3 · 已落地 |
 | **Step 6** | ✅ promptfoo Round 0 golden set 5 条 · baseline 4-5/5 · 挖到 prompt 优先级冲突 | Tier 3 · 已落地(M2 铺开) |
+| **Step 7** | ✅ 业务闭环 e2e 4 条 BF-01~04 · 含真调 DeepSeek · 4/4 全绿(15s) · SessionRepo seed 模式绕开 Monaco setValue 坑 | Tier 2 · 已落地 |
 
 ---
 
