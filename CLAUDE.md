@@ -59,6 +59,8 @@ pnpm lint       # eslint.config.mjs（flat config），继承 next/core-web-vita
 - 文档、代码注释、UI 文案默认使用中文（简体）；引用技术名词（Next.js、Server Actions、SSE 等）保持英文原词，不做生硬翻译。已有代码里的英文标识符不必强制翻译。
 - App Router 默认使用 Server Component；只有确实需要交互的文件才加 `'use client'`（目前 `app/chat-demo/page.tsx` 和 `app/practice/page.tsx` 是仅有的 client component）。
 - 所有git提交中都不要加Co-Authored-By: Claude
+- 任何文档中不要出现“秋招”“面试”等专业术语，如有知识点介绍、项目介绍等，都直接写知识点/介绍等即可。
+- 所有 commit 只保留 subject 一行,不再堆 Sanity/根因/修法。
 
 ## 学习项目心态
 
