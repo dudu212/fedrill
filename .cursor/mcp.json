@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fedrill": {
+      "command": "node",
+      "args": ["E:/fedrill/packages/fedrill-mcp/dist/index.js"]
+    }
+  }
+}

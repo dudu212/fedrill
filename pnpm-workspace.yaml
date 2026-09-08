@@ -1,3 +1,6 @@
+packages:
+  - 'packages/*'
+
 allowBuilds:
   '@playwright/browser-chromium': false
   '@swc/core': false

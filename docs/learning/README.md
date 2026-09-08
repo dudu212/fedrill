@@ -32,6 +32,7 @@
 - [ ] `memgpt-notes.md` —— 论文精读
 
 ### L6 · MCP
+- [x] [`mcp-server-implementation.md`](mcp-server-implementation.md) —— MCP Server 落地 · stdio + 3 只读 tool · esbuild 零 alias 打包 · Cursor allowlist 审批踩坑
 - [ ] `mcp-primitives.md` —— Tools / Resources / Prompts 边界
 - [ ] `mcp-transport.md` —— stdio vs SSE vs HTTP
 

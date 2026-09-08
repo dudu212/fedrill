@@ -1,0 +1,22 @@
+{
+  "name": "@fedrill/mcp",
+  "version": "0.1.0",
+  "description": "FEDrill 手撕题库 MCP Server —— 让 Claude Desktop / Codex / Cursor 等 MCP 客户端挂载 FEDrill 题库",
+  "type": "module",
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js --target=node18",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

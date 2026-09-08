@@ -31,7 +31,7 @@
 - [ ] `002-hand-rolled-vs-sdk-agent.md` —— L2，手写 Agent Loop vs 用 SDK 抽象（M2 前必写）
 - [ ] `003-localstorage-until-m4.md` —— L1，M1–M3 用 localStorage，M4 才引数据库
 - [ ] `004-agent-loop-vs-langchain.md` —— L2，Agent Loop 自研而非 LangChain（M2 前必写）
-- [ ] `005-mcp-server.md` —— L6，MCP transport / primitives 选择
+- [x] `005-mcp-server.md` —— L6,MCP transport / primitives 选择(Accepted)
 - [x] `006-sandbox-vs-oj.md` —— L1，自研 minimal 判题器 vs 引入开源 OJ（Accepted）
 - [ ] `007-vector-db-selection.md` —— L4，sqlite-vec / pgvector / Pinecone 对比
 - [ ] `008-memory-architecture.md` —— L5，三层 memory 架构
