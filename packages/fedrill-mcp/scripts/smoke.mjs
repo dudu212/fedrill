@@ -43,12 +43,12 @@ function notify(method) {
   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method }) + '\n')
 }
 
-// 兜底：5 秒没跑完说明服务器没响应
+// 兜底：10 秒没跑完说明服务器没响应
 setTimeout(() => {
-  console.error('⏱ smoke 超时（5s）—— 服务器可能没响应')
+  console.error('⏱ smoke 超时（10s）—— 服务器可能没响应')
   child.kill()
   process.exit(1)
-}, 5000)
+}, 10000)
 
 // ① initialize（握手，协商协议版本）
 const init = await rpc('initialize', {
@@ -85,6 +85,33 @@ console.log('\n⑥ get_problem(nope) → isError:', gpBad.result.isError, '|', g
 // ⑦ explain_concept
 const ex = await rpc('tools/call', { name: 'explain_concept', arguments: { topic: '深拷贝' } })
 console.log('\n⑦ explain_concept(深拷贝) →\n' + ex.result.content[0].text)
+
+// ⑧ run_tests（正确实现 → 全过）
+const correctCode = `function myDeepClone(obj) {
+  if (obj === null || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map((x) => myDeepClone(x))
+  const out = {}
+  for (const k of Object.keys(obj)) out[k] = myDeepClone(obj[k])
+  return out
+}`
+const rt1 = await rpc('tools/call', { name: 'run_tests', arguments: { id: 'deep-clone', code: correctCode } })
+const rt1Data = JSON.parse(rt1.result.content[0].text)
+console.log('\n⑧ run_tests(deep-clone, 正确) → isError:', rt1.result.isError,
+  '| 通过:', rt1Data.results.filter((r) => r.passed).length + '/' + rt1Data.results.length)
+
+// ⑨ run_tests（错误实现 → 全挂）
+const wrongCode = `function myDeepClone(obj) { return null }`
+const rt2 = await rpc('tools/call', { name: 'run_tests', arguments: { id: 'deep-clone', code: wrongCode } })
+const rt2Data = JSON.parse(rt2.result.content[0].text)
+console.log('\n⑨ run_tests(deep-clone, 错误) → 通过:', rt2Data.results.filter((r) => r.passed).length + '/' + rt2Data.results.length,
+  '| 首条 actual:', JSON.stringify(rt2Data.results[0].actual))
+
+// ⑩ run_tests（死循环 → 超时被 terminate）
+const loopCode = `function myDeepClone(obj) { while (true) {} }`
+const t0 = Date.now()
+const rt3 = await rpc('tools/call', { name: 'run_tests', arguments: { id: 'deep-clone', code: loopCode } })
+console.log('\n⑩ run_tests(死循环) → isError:', rt3.result.isError,
+  '| 耗时:', Date.now() - t0 + 'ms', '|', rt3.result.content[0].text)
 
 child.kill()
 console.log('\n✅ smoke 完成')

@@ -2,31 +2,9 @@
 
 import type { SandboxRequest, SandboxResponse, TestResult } from './types'
 import { deepEqual } from './deep-equal'
+import { reifyInput } from './reify-input'
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope
-
-function reifyInput(v: unknown): unknown {
-  if (v && typeof v === 'object' && !Array.isArray(v)) {
-    const rec = v as Record<string, unknown>
-    if (typeof rec.__fn === 'string') {
-      return new Function(`return (${rec.__fn})`)()
-    }
-    if (typeof rec.__val === 'string') {
-      return new Function(`return (${rec.__val})`)()
-    }
-    if (typeof rec.__throw === 'string') {
-      const msg = rec.__throw
-      return () => {
-        throw new Error(msg)
-      }
-    }
-    const out: Record<string, unknown> = {}
-    for (const [k, x] of Object.entries(rec)) out[k] = reifyInput(x)
-    return out
-  }
-  if (Array.isArray(v)) return v.map(reifyInput)
-  return v
-}
 
 ctx.onmessage = async (e: MessageEvent<SandboxRequest>) => {
   if (e.data.type !== 'run') return

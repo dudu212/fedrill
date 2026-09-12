@@ -46,6 +46,7 @@ next-env.d.ts
 
 # 私有文档（求职策略/学习计划/架构草图，不公开）
 /docs/private/
+/docs/mastery/
 
 # Playwright
 /test-results/

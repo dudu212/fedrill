@@ -38,3 +38,4 @@
 - [x] `009-ai-test-autonomy-tiers.md` —— 横切 · Testing，AI 参与测试与修复的风险分级（Tier 1/2/3）（Accepted）
 - [x] `010-playwright-e2e.md` —— 横切 · Testing，Playwright E2E 与 chromium-only 起步（Accepted）
 - [x] `011-client-side-agent-loop.md` —— L2，Agent Loop 在客户端跑、服务端只做 LLM 代理（Accepted）
+- [x] `012-node-sandbox-isolation.md` —— L6，MCP 判题 tool 的 Node 侧沙箱隔离（worker_threads + vm）（Accepted）

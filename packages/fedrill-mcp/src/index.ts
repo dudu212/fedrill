@@ -23,6 +23,7 @@ import {
   problems,
   problemsByCategory,
 } from '../../../data/problems'
+import { runInSandbox } from './judge-runner'
 
 type Problem = (typeof problems)[number]
 
@@ -128,6 +129,27 @@ function handleExplainConcept(topic: string) {
   return textResult(body)
 }
 
+async function handleRunTests(args: Record<string, unknown>) {
+  const id = typeof args.id === 'string' ? args.id : ''
+  const code = typeof args.code === 'string' ? args.code : ''
+  if (!id || !code) return textResult('需要 id（题目 id）和 code（用户代码）两个参数', true)
+
+  const p = getProblem(id)
+  if (!p) {
+    return textResult(`找不到题目「${id}」。可用 id：${problems.map((x) => x.id).join(' / ')}`, true)
+  }
+
+  const basic = p.testCases?.basic ?? []
+  if (basic.length === 0) return textResult(`题目「${id}」没有 basic 用例`, true)
+
+  try {
+    const result = await runInSandbox(code, p.requiredAPI, basic)
+    return textResult(JSON.stringify(result, null, 2))
+  } catch (err) {
+    return textResult(err instanceof Error ? err.message : String(err), true)
+  }
+}
+
 // ---- Server 装配 ----
 
 const server = new Server(
@@ -186,6 +208,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
       annotations: { readOnlyHint: true, idempotentHint: true },
     },
+    {
+      name: 'run_tests',
+      description:
+        '运行用户代码跑一道题的测试用例并判分。参数 id（题目 id）+ code（用户代码字符串）。返回每个用例的通过/失败 + 实际输出 vs 期望值。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: '题目 id，例如 deep-clone / flat / promise-all。' },
+          code: {
+            type: 'string',
+            description: '用户写的代码（需定义 requiredAPI 对应的函数）。',
+          },
+        },
+        required: ['id', 'code'],
+      },
+      annotations: { idempotentHint: true },
+    },
   ],
 }))
 
@@ -200,6 +239,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return handleGetProblem(typeof args.id === 'string' ? args.id : '')
     case 'explain_concept':
       return handleExplainConcept(typeof args.topic === 'string' ? args.topic : '')
+    case 'run_tests':
+      return await handleRunTests(args)
     default:
       return textResult(`未知 tool：${name}`, true)
   }
