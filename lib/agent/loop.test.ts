@@ -93,7 +93,7 @@ describe('runAgentLoop · 状态机基本流转', () => {
         { type: 'done', finishReason: 'stop' },
       ])
     })
-    vi.mocked(executeRunTests).mockResolvedValue({ success: true, results: [] })
+    vi.mocked(executeRunTests).mockResolvedValue({ success: true })
 
     const events = await collect(
       runAgentLoop({ problemId: 'p1', initialMessages: [] }),
