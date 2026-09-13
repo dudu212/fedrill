@@ -33,6 +33,7 @@
 
 ### L6 · MCP
 - [x] [`mcp-server-implementation.md`](mcp-server-implementation.md) —— MCP Server 落地 · stdio + 3 只读 tool · esbuild 零 alias 打包 · Cursor allowlist 审批踩坑
+- [x] [`mcp-server-retrospective.md`](mcp-server-retrospective.md) —— MCP 完整复盘 · 八维度（背景/价值/问题/决策/架构/数据流/结果/八股）+ run_tests 判题 + npm 发布
 - [ ] `mcp-primitives.md` —— Tools / Resources / Prompts 边界
 - [ ] `mcp-transport.md` —— stdio vs SSE vs HTTP
 
