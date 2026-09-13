@@ -1,16 +1,24 @@
 # FEDrill · M5 改造计划：用户登录 · 用户画像 · 题库迁移 PostgreSQL
 
-> 版本 v1 · 2026-09-13
+> 版本 v1.1 · 2026-09-13
 >
 > 前置：M4「PostgreSQL 会话持久化接入」已完成并合入 main（commit a946333）
 >
 > 单一事实源：本文档为 M5 期改造计划的权威。改动优先动这里，其他文档只挂锚点。
 
+## 〇、进度总览
+
+| Phase | 内容 | 状态 | 备注 |
+|---|---|---|---|
+| Phase 1 | **任务 A：题库迁移 PostgreSQL** | ✅ 已完成（v1.1） | 15 道题全量入库，列表/详情改从 DB 读取，API fallback 保留 |
+| Phase 2 | 任务 C：用户画像 | ⬜ 未开始 | 口径待拍板（见 §五 C.1） |
+| Phase 3 | 任务 B：用户登录 | ⬜ 未开始 | 依赖 Phase 2 后推进 |
+
 ## 一、背景与目标
 
-- **现状**：M4 已完成 PostgreSQL 接入——`users`（匿名用户）、`problems`（做题时单题登记）、`sessions`（会话持久化）三表已启用；`user_profiles` / `test_results` / `srs_cards` 三表与 `update_user_profile` 存储过程已建好但未接线；题库仍为静态 TS（`data/problems/*.ts`，15 道）。
+- **现状**：M4 已完成 PostgreSQL 接入——`users`（匿名用户）、`problems`（做题时单题登记）、`sessions`（会话持久化）三表已启用；`user_profiles` / `test_results` / `srs_cards` 三表与 `update_user_profile` 存储过程已建好但未接线；题库原为静态 TS（`data/problems/*.ts`，15 道）。
 - **M5 目标（三件事）**：
-  1. **题库全量迁移 PostgreSQL**：`problems` 表成为题库唯一权威源，覆盖全部题目；
+  1. **题库全量迁移 PostgreSQL**：`problems` 表成为题库唯一权威源，覆盖全部题目；✅ 已完成
   2. **用户登录**：接入 GitHub OAuth，匿名用户升级为真实账号，支持多设备同步；
   3. **用户画像**：训练行为自动沉淀画像（技能矩阵 / 连续打卡 / 完成数），并提供前端展示页。
 
@@ -21,42 +29,50 @@
 | 表 | 状态 | 说明 |
 |---|---|---|
 | `users` | ✅ 已启用 | 匿名用户（`anon-<uuid>@fedrill.local`），`github_id` 字段已预留 |
-| `problems` | 🟡 部分 | 仅"做过的题"被 seed-problem.ts 自动登记，非全量 |
+| `problems` | ✅ 已启用（v1.1 起全量） | **15 道题已全量迁移入库**，作为题库权威源 |
 | `sessions` | ✅ 已启用 | 每用户每题目一条，UNIQUE(user_id, problem_id) |
 | `user_profiles` | 🟡 建表未用 | skill_matrix / streak / total_completed 字段就绪 |
 | `test_results` | 🟡 建表未用 | 每轮测试历史流水结构就绪 |
 | `srs_cards` | 🟡 建表未用 | SM-2 间隔重复卡片结构就绪 |
 | `update_user_profile()` | 🟡 已定义未调用 | 按 round=4 会话数算 total_completed |
 
-### 2.2 题库现状
+### 2.2 题库现状（v1.1 更新）
 
-- `data/problems/*.ts`：15 个 TS 文件，每个导出 `ImplProblemMinimal`（id/type/category/title/difficulty/tags/description/starterCode/testCases/…），`index.ts` 聚合。
-- 读取路径：页面直接 import 静态 TS；首次做题时 seed-problem.ts 把该题 upsert 进 `problems` 表（仅登记，不作为读取源）。
+- ~~静态 TS 为唯一源~~ → **PostgreSQL `problems` 表为权威源**（data JSONB 存完整题目，顶层列存索引字段）。
+- 静态 TS（`data/problems/*.ts`）保留为 **API fallback**：DB 未迁移 / 连接失败时回退，保证开发期可用。
+- 迁移脚本：`scripts/migrate-problems.ts`（`pnpm exec tsx scripts/migrate-problems.ts`，幂等 upsert）。
 
-## 三、任务 A：题库迁移 PostgreSQL
+## 三、任务 A：题库迁移 PostgreSQL（✅ 已完成）
 
 **目标**：`problems` 表成为题库唯一权威源，题目列表/详情改从数据库读取。
 
-### A.1 迁移脚本
+### A.1 迁移脚本（已完成）
 
-- 新增 `scripts/migrate-problems.mjs`：读取 `data/problems/index.ts` 全量题目 → upsert 进 `problems` 表（幂等，可重复执行）。
-- `problems.data`（JSONB）存完整题目（description / starterCode / testCases / example 等），顶层列存索引字段（id/type/category/title/difficulty/tags）。
+- `scripts/migrate-problems.ts`：读取 `data/problems/index.ts` 全量题目 → upsert 进 `problems` 表（幂等，可重复执行）。
+- 执行方式：`pnpm exec tsx scripts/migrate-problems.ts`（tsx 支持 tsconfig paths `@/`）。
+- 执行结果：首次新增 13 道 + 更新 2 道（此前做题已登记）= **共 15 道**；重跑一次新增 0 / 更新 15（**幂等验证通过**）。
 
-### A.2 读取链路改造
+### A.2 读取链路改造（已完成）
 
-- 新增 `lib/repo/problem-repo.ts`：服务端实现 `listProblems()` / `getProblemById(id)`（pg 查询）。
-- 新增 `GET /api/problems`、`GET /api/problems/[id]` 路由。
-- 前端题库列表页 / 题目详情页改从 API 取数（复用现有 fetch 封装风格）。
-- **fallback 决策**：DB 无数据时回退静态 TS 读取（保持开发期便利），DB 有数据则用 DB。
-- `seed-problem.ts` 降级为幂等兜底（保留，避免外键断裂）。
+- `lib/repo/problem-repo.ts`：服务端 `listProblemsFromDb()` / `getProblemFromDb(id)` / `hasSeededProblems()`（pg 查询，data JSONB 即完整题目）。
+- `GET /api/problems`：DB 有数据 → 返回 DB 列表；DB 空/失败 → 回退静态 TS（页面无感知）。
+- `GET /api/problems/[id]`：DB 查 → 回退静态 → 404。
+- 前端：
+  - `app/problems/page.tsx`：列表改从 `/api/problems` 异步取数（loading / error 态），分类过滤在客户端。
+  - `app/problems/[id]/page.tsx`：题目改从 `/api/problems/[id]` 异步取数（loading 骨架 + 404 分支），Monaco / Agent / 测试逻辑不变。
+- `seed-problem.ts`：保持幂等兜底（迁移后 INSERT 冲突走 `ON CONFLICT DO NOTHING`，天然 no-op），无需改动。
 
-### A.3 涉及文件与验证
+### A.3 验证记录（已完成）
 
-- 新增：`scripts/migrate-problems.mjs`、`lib/repo/problem-repo.ts`、`app/api/problems/route.ts`、`app/api/problems/[id]/route.ts`
-- 修改：题库列表页、题目详情页取数、`seed-problem.ts`
-- 验证：迁移后 `SELECT count(*) FROM problems` = 15；题库列表/详情页端到端可读；重复执行迁移脚本数据不翻倍（幂等）
+- [x] 迁移幂等：跑两遍 `count(*)` 恒为 15
+- [x] `GET /api/problems` → 200，15 道，分类分布 util 5 / async 4 / prototype 4 / pattern 2
+- [x] `GET /api/problems/promise-all` → 完整题目（requiredAPI / testCases.basic 5 个 / starterCode / edgeCases / followUpPath）
+- [x] `GET /api/problems/async-series`（此前未做过）→ 正确返回，证明全量迁移
+- [x] 未知 id → 404
+- [x] `tsc --noEmit` 零错误；`vitest` 74/74 通过
+- [x] 浏览器端到端：题库列表页（15 道卡片 + 分类计数）、题目详情页（async-series 完整渲染）均从 API/DB 正常加载
 
-## 四、任务 B：用户登录（GitHub OAuth）
+## 四、任务 B：用户登录（GitHub OAuth）（⬜ 未开始）
 
 **目标**：GitHub OAuth 登录 → `users.github_id` 绑定 → 匿名数据迁移合并 → 多设备同步。
 
@@ -83,7 +99,7 @@
   - NextAuth 与 Next 16 兼容性（若选 NextAuth，先 spike 验证）；
   - 并发登录/重复登录的幂等处理（同 github_id 再次登录不重复迁移）。
 
-## 五、任务 C：用户画像
+## 五、任务 C：用户画像（⬜ 未开始）
 
 **目标**：训练行为自动沉淀画像数据，提供展示页。
 
@@ -113,17 +129,17 @@
 
 ## 六、实施顺序与里程碑
 
-| Phase | 内容 | 依赖 | 优先级 |
+| Phase | 内容 | 状态 | 优先级 |
 |---|---|---|---|
-| **Phase 1** | 任务 A 题库迁移 | 无（独立、低风险） | 先做，作为数据层地基 |
-| **Phase 2** | 任务 C 用户画像 | 无（基于现有匿名体系） | 次做 |
-| **Phase 3** | 任务 B 用户登录 | 建议在 A/C 之后（user 体系成熟后合并） | 后做 |
+| **Phase 1** | 任务 A 题库迁移 | ✅ 已完成（2026-09-13） | 数据层地基 |
+| **Phase 2** | 任务 C 用户画像 | ⬜ 待启动 | 次做 |
+| **Phase 3** | 任务 B 用户登录 | ⬜ 待启动 | 后做 |
 
 每 Phase 交付即验证，改动同步进 `docs/` 与 Windows 端课程设计目录 SQL/文档。
 
 ## 七、验证方案
 
-- **A**：迁移脚本幂等（跑两遍 count 仍=15）；题库列表/详情端到端从 API 读取成功；
+- **A**（已完成）：迁移脚本幂等（跑两遍 count 仍=15）；题库列表/详情端到端从 API 读取成功；
 - **B**：OAuth 登录 → users 更新；匿名数据合并后 sessions 归属正确；重复登录不重复迁移；
 - **C**：通关到 round4 → total_completed+1、skill_matrix 按 category 更新、streak 连续/断更逻辑正确；`/profile` 页展示数据与 DB 一致。
 
@@ -132,5 +148,5 @@
 - [ ] `skill_matrix` 口径：按 category（默认）还是按 tags，待拍板；
 - [ ] GitHub OAuth App 注册（需仓库/账号管理员操作，回调 URL）；
 - [ ] 认证实现选型：手写 OAuth vs NextAuth（Next 16 兼容性待验证）；
-- [ ] 题库 fallback 策略：DB 空时回退静态 TS 是否保留；
-- [ ] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限（待 owner 加协作者或走 fork + PR）。
+- [x] ~~题库 fallback 策略~~：**已定**——DB 空/失败时回退静态 TS（API 层实现，页面无感知）；
+- [ ] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限 → 已改走 **fork + PR 流程**（PR #2 已提交，待 owner 合并）。

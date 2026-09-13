@@ -12,7 +12,8 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Editor from '@monaco-editor/react'
 import '@/lib/monaco/init'
-import { categoryLabels, getProblem } from '@/data/problems'
+import { categoryLabels } from '@/data/problems'
+import type { ImplProblemMinimal } from '@/lib/types/problem'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult, TestResult } from '@/lib/sandbox/types'
 import { buildRound0SystemPrompt } from '@/lib/agent/round0-prompt'
@@ -45,8 +46,37 @@ type UIToolCall = {
 export default function ProblemDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
-  const problem = id ? getProblem(id) : undefined
   const repo = useMemo(() => getSessionRepo(), [])
+
+  // M5：题库权威源迁移 PostgreSQL —— 题目从 /api/problems/[id] 读取（DB 优先，API 层回退静态 TS）
+  const [problem, setProblem] = useState<ImplProblemMinimal | null>(null)
+  const [problemLoading, setProblemLoading] = useState(true)
+  useEffect(() => {
+    if (!id) {
+      setProblemLoading(false)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/problems/${encodeURIComponent(id)}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return (
+          ((await r.json()) as { problem?: ImplProblemMinimal }).problem ?? null
+        )
+      })
+      .then((p) => {
+        if (!cancelled) setProblem(p)
+      })
+      .catch(() => {
+        if (!cancelled) setProblem(null)
+      })
+      .finally(() => {
+        if (!cancelled) setProblemLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id])
 
   const [code, setCode] = useState<string>('')
   const [running, setRunning] = useState(false)
@@ -312,6 +342,17 @@ export default function ProblemDetailPage() {
   const total = testResults?.results.length ?? 0
   const allPassed = total > 0 && passCount === total
   const currentRound = allPassed ? 1 : 0
+
+  if (problemLoading) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-4 p-8">
+        <h1 className="text-2xl font-bold">题目加载中…</h1>
+        <Link href="/problems" className="text-blue-500 hover:underline">
+          ← 返回题库
+        </Link>
+      </main>
+    )
+  }
 
   if (!problem) {
     return (

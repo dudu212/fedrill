@@ -1,16 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import {
-  categoryLabels,
-  problems,
-  problemsByCategory,
-} from '@/data/problems'
-import type { ImplCategory, ImplProblemMinimal } from '@/lib/types/problem'
+import { useEffect, useState } from 'react'
+import { categoryLabels } from '@/data/problems'
+import type { ImplCategory } from '@/lib/types/problem'
 import { ApiKeySettings } from '@/app/_components/api-key-settings'
 
 const CATEGORIES: ImplCategory[] = ['async', 'prototype', 'util', 'pattern']
+
+/** 列表卡片数据（M5 起由 /api/problems 提供，PostgreSQL 为权威源） */
+interface ProblemCard {
+  id: string
+  category: string
+  title: string
+  difficulty: string
+  tags: string[]
+}
 
 /**
  * hover 题目卡片时预加载 Monaco 主脚本 · 用户点进去前 Monaco 已在缓存里,首屏 0 等待。
@@ -41,9 +46,35 @@ const difficultyLabel: Record<string, string> = {
 
 export default function ProblemsListPage() {
   const [active, setActive] = useState<ImplCategory | 'all'>('all')
+  const [problems, setProblems] = useState<ProblemCard[] | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  const list: ImplProblemMinimal[] =
-    active === 'all' ? problems : (problemsByCategory[active] ?? [])
+  // M5：题库权威源迁移 PostgreSQL —— 列表从 /api/problems 读取（DB 优先，API 层回退静态 TS）
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/problems')
+      .then((r) =>
+        r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)),
+      )
+      .then((data) => {
+        if (!cancelled) {
+          setProblems((data as { problems?: ProblemCard[] }).problems ?? [])
+        }
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setLoadError(e instanceof Error ? e.message : String(e))
+          setProblems([])
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const list: ProblemCard[] =
+    problems?.filter((p) => active === 'all' || p.category === active) ?? []
+  const total = problems?.length ?? 0
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-8">
@@ -57,7 +88,7 @@ export default function ProblemsListPage() {
           </Link>
           <h1 className="text-3xl font-bold">手撕题库</h1>
           <p className="text-sm text-zinc-500">
-            共 {problems.length} 道题 · AI 面试官陪你走 Round 0 → 4
+            共 {total} 道题 · AI 面试官陪你走 Round 0 → 4
           </p>
         </div>
         <ApiKeySettings />
@@ -65,10 +96,11 @@ export default function ProblemsListPage() {
 
       <nav className="flex flex-wrap gap-2">
         <TabButton active={active === 'all'} onClick={() => setActive('all')}>
-          全部 ({problems.length})
+          全部 ({total})
         </TabButton>
         {CATEGORIES.map((c) => {
-          const count = problemsByCategory[c]?.length ?? 0
+          const count =
+            problems?.filter((p) => p.category === c).length ?? 0
           return (
             <TabButton
               key={c}
@@ -80,6 +112,18 @@ export default function ProblemsListPage() {
           )
         })}
       </nav>
+
+      {problems === null && !loadError && (
+        <div className="rounded border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
+          题库加载中…
+        </div>
+      )}
+
+      {loadError && (
+        <div className="rounded border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+          题库加载失败：{loadError}（请确认 dev server 与 PostgreSQL 可用）
+        </div>
+      )}
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((p) => (
@@ -120,7 +164,7 @@ export default function ProblemsListPage() {
             </div>
           </Link>
         ))}
-        {list.length === 0 && (
+        {list.length === 0 && problems !== null && !loadError && (
           <div className="col-span-full rounded border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
             该分类下暂无题目
           </div>
