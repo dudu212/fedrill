@@ -63,6 +63,19 @@ export interface ImplProblemMinimal extends BaseProblem {
   referenceImpls?: ReferenceImpl[]
 }
 
+export type VisualizationType = 'array' | 'linkedlist' | 'tree' | 'dp' | 'graph'
+
+export interface AlgorithmProblem extends BaseProblem {
+  type: 'algorithm'
+  requiredAPI: string
+  starterCode: string
+  testCases: TestCase[]
+  timeLimit: number
+  memoryLimit: number
+  hintLevels: string[]
+  visualizationType?: VisualizationType
+}
+
 export type Round = 0 | 1 | 2 | 3 | 4 | 'completed'
 
 export interface ToolCall {
