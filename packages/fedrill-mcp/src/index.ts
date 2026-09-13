@@ -1,8 +1,9 @@
+#!/usr/bin/env node
 /**
  * FEDrill 手撕题库 MCP Server（stdio transport）
  *
  * 让 Claude Desktop / Codex CLI / Cursor 等 MCP 客户端挂载 FEDrill 题库。
- * v1 只做三个只读 tool（判题继续留在 fedrill.vercel.app 网站沙箱）：
+ * 4 个 tool（3 只读 + run_tests 判题，判题用 worker_threads + vm 隔离）：
  *   - list_problems   列题库（可按分类筛选）
  *   - get_problem     取题面 + starterCode + edgeCases（不含判题数据）
  *   - explain_concept 讲手撕题相关概念（复用题库的 edgeCases/hint 作为知识点）
@@ -153,7 +154,7 @@ async function handleRunTests(args: Record<string, unknown>) {
 // ---- Server 装配 ----
 
 const server = new Server(
-  { name: 'fedrill-mcp', version: '0.1.0' },
+  { name: 'fedrill-mcp', version: '0.2.0' },
   { capabilities: { tools: {} } },
 )
 

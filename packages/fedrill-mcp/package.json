@@ -1,13 +1,22 @@
 {
   "name": "@fedrill/mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "FEDrill 手撕题库 MCP Server —— 让 Claude Desktop / Codex / Cursor 等 MCP 客户端挂载 FEDrill 题库",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "fedrill-mcp": "dist/index.js"
+  },
   "files": ["dist"],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "esbuild src/index.ts src/judge-worker.ts --bundle --platform=node --format=esm --packages=external --outdir=dist --outbase=src --target=node18",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0"
