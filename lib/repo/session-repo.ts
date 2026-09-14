@@ -1,5 +1,6 @@
 import type { Round } from '@/lib/types/problem'
 import type { SandboxRunResult } from '@/lib/sandbox/types'
+import { HttpSessionRepo } from './http-session-repo'
 
 /**
  * 会话内的一条消息。
@@ -164,7 +165,15 @@ let _instance: SessionRepo | null = null
 
 export function getSessionRepo(): SessionRepo {
   if (!_instance) {
-    _instance = new LocalStorageSessionRepo()
+    // M4：NEXT_PUBLIC_USE_POSTGRES=1 时走 PostgreSQL（API 桥接），否则 LocalStorage 兜底
+    if (
+      typeof window !== 'undefined' &&
+      process.env.NEXT_PUBLIC_USE_POSTGRES === '1'
+    ) {
+      _instance = new HttpSessionRepo()
+    } else {
+      _instance = new LocalStorageSessionRepo()
+    }
   }
   return _instance
 }
