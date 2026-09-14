@@ -91,7 +91,15 @@ export default function ProblemsListPage() {
             共 {total} 道题 · AI 面试官陪你走 Round 0 → 4
           </p>
         </div>
-        <ApiKeySettings />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/profile"
+            className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-300 transition hover:border-blue-500/60 hover:text-blue-300"
+          >
+            我的画像
+          </Link>
+          <ApiKeySettings />
+        </div>
       </header>
 
       <nav className="flex flex-wrap gap-2">

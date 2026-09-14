@@ -24,6 +24,13 @@ export async function getOrCreateUser(userKey: string): Promise<string> {
     `INSERT INTO users (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`,
     [email],
   )
+  // M5 Phase 2：确保画像行存在（幂等）——user_profiles 与 users 一一对应
+  await pool.query(
+    `INSERT INTO user_profiles (user_id)
+     SELECT user_id FROM users WHERE email = $1
+     ON CONFLICT (user_id) DO NOTHING`,
+    [email],
+  )
   const { rows } = await pool.query<{ user_id: string }>(
     `SELECT user_id FROM users WHERE email = $1`,
     [email],

@@ -1,8 +1,8 @@
 # FEDrill · M5 改造计划：用户登录 · 用户画像 · 题库迁移 PostgreSQL
 
-> 版本 v1.1 · 2026-09-13
+> 版本 v1.2 · 2026-09-14
 >
-> 前置：M4「PostgreSQL 会话持久化接入」已完成并合入 main（commit a946333）
+> 前置：M4「PostgreSQL 会话持久化接入」已完成并合入 main（commit a946333）；M5 Phase 1「题库迁移 PostgreSQL」已提 PR #3（commit 965d5e5）
 >
 > 单一事实源：本文档为 M5 期改造计划的权威。改动优先动这里，其他文档只挂锚点。
 
@@ -10,8 +10,8 @@
 
 | Phase | 内容 | 状态 | 备注 |
 |---|---|---|---|
-| Phase 1 | **任务 A：题库迁移 PostgreSQL** | ✅ 已完成（v1.1） | 15 道题全量入库，列表/详情改从 DB 读取，API fallback 保留 |
-| Phase 2 | 任务 C：用户画像 | ⬜ 未开始 | 口径待拍板（见 §五 C.1） |
+| Phase 1 | **任务 A：题库迁移 PostgreSQL** | ✅ 已完成（v1.1） | 15 道题全量入库，列表/详情改从 DB 读取，API fallback 保留；PR #3 已提交 |
+| Phase 2 | 任务 C：用户画像 | ✅ 已完成（v1.2） | 匿名用户画像落库 + 通关触发刷新 + /profile 展示页；PR 待提交 |
 | Phase 3 | 任务 B：用户登录 | ⬜ 未开始 | 依赖 Phase 2 后推进 |
 
 ## 一、背景与目标
@@ -31,10 +31,10 @@
 | `users` | ✅ 已启用 | 匿名用户（`anon-<uuid>@fedrill.local`），`github_id` 字段已预留 |
 | `problems` | ✅ 已启用（v1.1 起全量） | **15 道题已全量迁移入库**，作为题库权威源 |
 | `sessions` | ✅ 已启用 | 每用户每题目一条，UNIQUE(user_id, problem_id) |
-| `user_profiles` | 🟡 建表未用 | skill_matrix / streak / total_completed 字段就绪 |
+| `user_profiles` | ✅ 已启用（v1.2） | 用户创建时自动建行；通关时刷新 total_completed / skill_matrix / streak |
+| `update_user_profile()` | ✅ 已启用（v1.2） | 通关时调用，算 total_completed（round=4 会话数） |
 | `test_results` | 🟡 建表未用 | 每轮测试历史流水结构就绪 |
 | `srs_cards` | 🟡 建表未用 | SM-2 间隔重复卡片结构就绪 |
-| `update_user_profile()` | 🟡 已定义未调用 | 按 round=4 会话数算 total_completed |
 
 ### 2.2 题库现状（v1.1 更新）
 
@@ -99,40 +99,50 @@
   - NextAuth 与 Next 16 兼容性（若选 NextAuth，先 spike 验证）；
   - 并发登录/重复登录的幂等处理（同 github_id 再次登录不重复迁移）。
 
-## 五、任务 C：用户画像（⬜ 未开始）
+## 五、任务 C：用户画像（✅ 已完成 v1.2）
 
 **目标**：训练行为自动沉淀画像数据，提供展示页。
 
-### C.1 口径（需拍板）
+### C.1 口径（已定）
 
-| 指标 | 建议口径 | 状态 |
+| 指标 | 采用口径 | 状态 |
 |---|---|---|
-| `skill_matrix` | 按题目 `category` 维度掌握度 = 该类别通关题数 / 该类别题数，JSON `{"async": 100, ...}` | 默认方案，待确认 |
-| `streak` | 连续自然日有会话更新（`sessions.updated_at` 覆盖天数），断更归零 | 待确认 |
-| `total_completed` | round=4 会话数（存储过程已定义） | 复用 |
+| `skill_matrix` | 按题目 `category` 维度掌握度 = 该类别通关题数 / 该类别题数 × 100，JSON `{"async": 25, ...}`（0-100） | ✅ 已实现 |
+| `streak` | 连续自然日有会话更新（`sessions.updated_at` 覆盖天数，按 UTC 自然日），断更归零 | ✅ 已实现 |
+| `total_completed` | round=4 会话数（复用存储过程 `update_user_profile`） | ✅ 已实现 |
 
-### C.2 写入链路
+### C.2 写入链路（✅ 已实现）
 
-- 用户创建时**补建 `user_profiles` 行**（当前只有 users 行，存储过程 UPDATE 会命中 0 行）；
-- 通关（round 到达 4）→ 调用 `update_user_profile` 刷新 total_completed / streak；
-- 跑测试 / 通关时按题目 category 更新 skill_matrix；
-- 新增 `lib/profile/aggregate.ts`（画像聚合计算，纯函数便于单测）。
+- `lib/repo/user.ts` `getOrCreateUser`：用户创建时**补建 `user_profiles` 行**（幂等 `ON CONFLICT (user_id) DO NOTHING`）；
+- `lib/profile/aggregate.ts`：`computeSkillMatrix` / `computeStreak` / `refreshUserProfile` / `getProfileSnapshot`；
+- `app/api/session/[problemId]/route.ts` PATCH：检测通关（`currentRound` 到达 4）→ `refreshUserProfile`（调存储过程算 total_completed + 应用层算 skill_matrix / streak 写回），失败仅记日志不阻塞响应。
 
-### C.3 读取与展示
+### C.3 读取与展示（✅ 已实现）
 
-- 新增 `GET /api/profile`：按 user-key 解析用户 → 返回 user_profiles + 做题统计摘要；
-- 新增 `/profile` 页面：技能矩阵（雷达图/进度条）、连续打卡、完成数、最近做题记录；顶部导航加入口。
+- `GET /api/profile`：按 `x-fedrill-user-key` 解析用户（无头 401）→ 返回 `totalCompleted / skillMatrix / streak / recentSessions(5 条) / updatedAt`；skill_matrix 落库为空时用实时矩阵兜底（保证 4 类维度完整）；
+- `/profile` 页面（`app/profile/page.tsx`）：指标卡（完成数 / 连续打卡 / 最近更新）+ 技能矩阵进度条（async / prototype / util / pattern 四类）+ 最近训练记录（题目链接 + 分类 + Round 状态）；
+- 导航入口：题库列表页 header「我的画像」链接。
 
 ### C.4 依赖关系
 
-- C 可先基于匿名用户实现；B 完成后画像自动归属真实账号（数据合并时 user_profiles 一并迁移）。
+- C 基于匿名用户实现；Phase 3（登录）完成后画像自动归属真实账号（数据合并时 user_profiles 一并迁移）。
+
+### C.5 验证记录（已完成）
+
+- [x] 空画像：`GET /api/profile` → 200，totalCompleted=0 / streak=0 / skillMatrix 4 类均 0 / 无记录
+- [x] 通关 promise-all（async 类）→ totalCompleted=1 / streak=1 / skillMatrix.async=25（1/4）
+- [x] 再通关 my-call（prototype 类）→ totalCompleted=2 / skillMatrix.prototype=25
+- [x] 数据库核验：user_profiles 行自动创建、total_completed / streak / skill_matrix 落库正确
+- [x] 无 `x-fedrill-user-key` → 401
+- [x] `tsc --noEmit` 零错误；`vitest` 74/74 通过
+- [x] 浏览器端到端：题库列表页导航入口 + /profile 页面（指标卡 / 技能矩阵 / 最近记录）渲染正常
 
 ## 六、实施顺序与里程碑
 
 | Phase | 内容 | 状态 | 优先级 |
 |---|---|---|---|
 | **Phase 1** | 任务 A 题库迁移 | ✅ 已完成（2026-09-13） | 数据层地基 |
-| **Phase 2** | 任务 C 用户画像 | ⬜ 待启动 | 次做 |
+| **Phase 2** | 任务 C 用户画像 | ✅ 已完成（2026-09-14） | 次做 |
 | **Phase 3** | 任务 B 用户登录 | ⬜ 待启动 | 后做 |
 
 每 Phase 交付即验证，改动同步进 `docs/` 与 Windows 端课程设计目录 SQL/文档。
@@ -141,12 +151,12 @@
 
 - **A**（已完成）：迁移脚本幂等（跑两遍 count 仍=15）；题库列表/详情端到端从 API 读取成功；
 - **B**：OAuth 登录 → users 更新；匿名数据合并后 sessions 归属正确；重复登录不重复迁移；
-- **C**：通关到 round4 → total_completed+1、skill_matrix 按 category 更新、streak 连续/断更逻辑正确；`/profile` 页展示数据与 DB 一致。
+- **C**（已完成）：通关到 round4 → total_completed+1、skill_matrix 按 category 更新、streak 连续/断更逻辑正确；`/profile` 页展示数据与 DB 一致。
 
 ## 八、风险与开放问题
 
-- [ ] `skill_matrix` 口径：按 category（默认）还是按 tags，待拍板；
+- [x] `skill_matrix` 口径：**已定**——按 category（默认方案，v1.2 已实现）；tags 维度留作扩展
 - [ ] GitHub OAuth App 注册（需仓库/账号管理员操作，回调 URL）；
 - [ ] 认证实现选型：手写 OAuth vs NextAuth（Next 16 兼容性待验证）；
 - [x] ~~题库 fallback 策略~~：**已定**——DB 空/失败时回退静态 TS（API 层实现，页面无感知）；
-- [ ] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限 → 已改走 **fork + PR 流程**（PR #2 已提交，待 owner 合并）。
+- [x] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限 → 已改走 **fork + PR 流程**（PR #2 已合并，PR #3 待 owner 合并）。
