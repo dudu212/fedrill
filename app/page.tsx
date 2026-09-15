@@ -21,6 +21,12 @@ export default function Home() {
           进入题库 →
         </Link>
         <Link
+          href="/algo"
+          className="rounded border border-zinc-700 px-5 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900"
+        >
+          算法题（可视化）→
+        </Link>
+        <Link
           href="/chat-demo"
           className="rounded border border-zinc-700 px-5 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-900"
         >

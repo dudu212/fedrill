@@ -58,6 +58,10 @@ export interface RunAgentOptions {
   initialMessages: ProviderMessage[]
   /** 端到端可断 · 透传到 fetch 和每步循环开头 */
   signal?: AbortSignal
+  /** 自定义 tool 清单（默认 [run_tests]）· 算法题可传 [run_tests, visualize] */
+  tools?: ProviderToolSpec[]
+  /** 自定义 tool 执行体（默认只处理 run_tests）· 算法题可闭包注入当前 code */
+  executeTool?: (name: string, args: unknown, problemId: string) => Promise<unknown>
 }
 
 // ────────────────────────────────────────────────────────────
@@ -68,7 +72,7 @@ export async function* runAgentLoop(
   opts: RunAgentOptions,
 ): AsyncGenerator<AgentEvent> {
   const messages: ProviderMessage[] = [...opts.initialMessages]
-  const tools: ProviderToolSpec[] = [runTestsToolSpec]
+  const tools = opts.tools ?? [runTestsToolSpec]
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     throwIfAborted(opts.signal)
@@ -124,7 +128,11 @@ export async function* runAgentLoop(
     for (const call of toolCallsBuf) {
       throwIfAborted(opts.signal)
 
-      const result = await executeTool(call.name, opts.problemId)
+      const result = await (opts.executeTool ?? defaultExecuteTool)(
+        call.name,
+        call.args,
+        opts.problemId,
+      )
 
       messages.push({
         role: 'tool',
@@ -146,8 +154,9 @@ export async function* runAgentLoop(
 // Tool 分发（M2a 只有一个 tool，直接 if；M2b+ 换成 registry map）
 // ────────────────────────────────────────────────────────────
 
-async function executeTool(
+async function defaultExecuteTool(
   name: string,
+  _args: unknown,
   problemId: string,
 ): Promise<unknown> {
   if (name === 'run_tests') {

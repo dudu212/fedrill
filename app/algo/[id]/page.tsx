@@ -8,9 +8,20 @@ import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult } from '@/lib/sandbox/types'
 import { ArrayVisualizer } from '@/app/_components/array-visualizer'
 import { bubbleSortTrace } from '@/lib/visualization/traces/bubble-sort'
+import { runAgentLoop } from '@/lib/agent/loop'
+import type { ProviderMessage } from '@/lib/llm/types'
+import { buildSocraticSystemPrompt } from '@/lib/agent/socratic-prompt'
+import {
+  algoRunTestsToolSpec,
+  visualizeToolSpec,
+  executeAlgoRunTests,
+  executeVisualize,
+} from '@/lib/agent/tools/algo-tools'
 
 /** 可视化演示用的样例数组（参考轨迹，v1 不插桩用户代码） */
 const SAMPLE = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+
+type ChatMsg = { role: 'user' | 'assistant'; content: string }
 
 export default function AlgoDetailPage() {
   const params = useParams<{ id: string }>()
@@ -22,6 +33,12 @@ export default function AlgoDetailPage() {
   const [result, setResult] = useState<SandboxRunResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [hintCount, setHintCount] = useState(0)
+  const [testedCodeSnapshot, setTestedCodeSnapshot] = useState<string | null>(null)
+
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [input, setInput] = useState('')
+  const [chatting, setChatting] = useState(false)
+  const [streamingText, setStreamingText] = useState('')
 
   const trace = useMemo(() => bubbleSortTrace(SAMPLE), [])
 
@@ -31,9 +48,7 @@ export default function AlgoDetailPage() {
 
   if (!problem) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        找不到算法题「{id}」
-      </main>
+      <main className="mx-auto max-w-4xl px-6 py-10">找不到算法题「{id}」</main>
     )
   }
 
@@ -45,10 +60,70 @@ export default function AlgoDetailPage() {
         timeoutMs: problem.timeLimit,
       })
       setResult(res)
+      setTestedCodeSnapshot(code)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setRunning(false)
+    }
+  }
+
+  const send = async () => {
+    if (!input.trim() || chatting) return
+    const userMsg = input.trim()
+    setInput('')
+    setMessages((m) => [...m, { role: 'user', content: userMsg }])
+    setChatting(true)
+    setStreamingText('')
+
+    const systemPrompt = buildSocraticSystemPrompt(problem, {
+      problemId: problem.id,
+      code,
+      testResults: result,
+      hintLevelRevealed: hintCount,
+      testedCodeSnapshot,
+    })
+
+    const history: ProviderMessage[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }))
+    const initialMessages: ProviderMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: userMsg },
+    ]
+
+    let assistantContent = ''
+    try {
+      for await (const event of runAgentLoop({
+        problemId: problem.id,
+        initialMessages,
+        tools: [algoRunTestsToolSpec, visualizeToolSpec],
+        executeTool: async (name, _args, pid) => {
+          if (name === 'run_tests') return await executeAlgoRunTests(pid, code)
+          if (name === 'visualize') return await executeVisualize(pid)
+          return { success: false, error: `Unknown tool: ${name}` }
+        },
+      })) {
+        if (event.type === 'text_delta') {
+          assistantContent += event.delta
+          setStreamingText(assistantContent)
+        } else if (event.type === 'tool_call') {
+          assistantContent += `\n\n[🔧 调用 ${event.call.name}]`
+          setStreamingText(assistantContent)
+        }
+      }
+      setMessages((m) => [...m, { role: 'assistant', content: assistantContent }])
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      setMessages((m) => [
+        ...m,
+        { role: 'assistant', content: `⚠️ ${e instanceof Error ? e.message : String(e)}` },
+      ])
+    } finally {
+      setChatting(false)
+      setStreamingText('')
     }
   }
 
@@ -116,6 +191,51 @@ export default function AlgoDetailPage() {
           显示第 {hintCount + 1} 层提示
         </button>
       )}
+
+      <h2 className="mt-8 mb-2 text-lg font-semibold">苏格拉底教练</h2>
+      <div className="rounded-lg border border-slate-200 p-4">
+        <div className="space-y-3">
+          {messages.map((m, i) => (
+            <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+              <div
+                className={`inline-block max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
+                  m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'
+                }`}
+              >
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {chatting && (
+            <div className="text-left">
+              <div className="inline-block max-w-[85%] whitespace-pre-wrap rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
+                {streamingText || '思考中…'}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send()
+              }
+            }}
+            placeholder="问我这道题怎么想、卡在哪了…"
+            className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+          <button
+            onClick={send}
+            disabled={chatting || !input.trim()}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            发送
+          </button>
+        </div>
+      </div>
     </main>
   )
 }
