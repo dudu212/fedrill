@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOrCreateUser } from '@/lib/repo/user'
+import { resolveUserId } from '@/lib/auth/resolve'
 import { getProfileSnapshot } from '@/lib/profile/aggregate'
 
 /**
@@ -11,19 +11,16 @@ import { getProfileSnapshot } from '@/lib/profile/aggregate'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const USER_KEY_HEADER = 'x-fedrill-user-key'
-
 export async function GET(req: NextRequest) {
-  const userKey = req.headers.get(USER_KEY_HEADER)
-  if (!userKey) {
+  const userId = await resolveUserId(req)
+  if (!userId) {
     return NextResponse.json(
-      { error: 'missing x-fedrill-user-key header' },
+      { error: 'missing auth: login or x-fedrill-user-key header' },
       { status: 401 },
     )
   }
 
   try {
-    const userId = await getOrCreateUser(userKey) // 幂等：确保 users + user_profiles 行存在
     const profile = await getProfileSnapshot(userId)
     return NextResponse.json({ profile })
   } catch (e) {

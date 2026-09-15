@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { categoryLabels } from '@/data/problems'
 import type { ImplCategory } from '@/lib/types/problem'
 import { ApiKeySettings } from '@/app/_components/api-key-settings'
+import { AuthStatus } from '@/app/_components/auth-status'
 
 const CATEGORIES: ImplCategory[] = ['async', 'prototype', 'util', 'pattern']
 
@@ -98,6 +99,7 @@ export default function ProblemsListPage() {
           >
             我的画像
           </Link>
+          <AuthStatus />
           <ApiKeySettings />
         </div>
       </header>
