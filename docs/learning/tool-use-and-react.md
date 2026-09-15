@@ -26,7 +26,7 @@ M2a 要做的**唯一大事**：让 AI 自己决定"我要跑测试"，触发 `r
 ```
 Turn 1 · 首次调 LLM
 messages = [
-  { role: 'system', content: '你是面试官…' },
+  { role: 'system', content: '你是教练…' },
   { role: 'user',   content: '这有什么问题？' }
 ]
                     ↓ POST /v1/chat/completions
@@ -204,7 +204,7 @@ async function* agentLoop(messages: Message[], ctx: AgentContext) {
 - 陷入 tool_call → 幻觉 → 再 tool_call 的循环
 - 网络问题导致每次结果都空，LLM 一直重试
 
-Anthropic Claude Code 的实际实现里 [MAX_ITER 也是 10](https://github.com/anthropics/claude-code)（可讲的面试点）。到 10 就 throw，让上层决定是否 retry 或告用户。
+Anthropic Claude Code 的实际实现里 [MAX_ITER 也是 10](https://github.com/anthropics/claude-code)（可讲的知识点）。到 10 就 throw，让上层决定是否 retry 或告用户。
 
 ## 四、Tool 设计四条铁律
 
@@ -261,7 +261,7 @@ Anthropic Claude Code 的实际实现里 [MAX_ITER 也是 10](https://github.com
 - **MAX_ITER 太大**（>15）→ 一次卡壳烧掉几十 K token
 - **MAX_ITER 太小**（<5）→ 需要多步的任务被截断
 
-## 七、面试问答备忘
+## 七、问答备忘
 
 **Q：你的 Agent Loop 是怎么防无限循环的？**
 A：`max_iterations = 10`，超了 throw。两个终止条件：LLM 输出无 tool_calls 消息（正常结束）或迭代到上限（护栏结束）。Anthropic 的实现也是 10，属经验值。

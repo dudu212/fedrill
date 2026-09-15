@@ -14,7 +14,7 @@ M2a 起手的 Agent Loop 会引入多步交互链路：**用户点击 → LLM �
 - **Vitest 单测**（Phase 0 完成）：覆盖 `deepEqual` / `summarizeTestResults` / `SessionRepo` 的**函数正确性**——但看不到 SSR 是否产得出、客户端有没有未捕获 Promise、Monaco 有没有加载失败
 - **手动 `pnpm dev` 演示**：能看，但**不能持续跑**，每次改动都要人肉走一遍
 
-缺口正是 **E2E**：拉起真实的浏览器 + 真实的 Next.js server，从用户视角断言"点击 X 之后看到 Y"。M2a 要交付简历级 demo（Round 0 → tool_call → Round 1 全链路），没有 E2E 兜底就是**每次改完都手动过一遍**——冲刺阶段这是压死人的时间黑洞。
+缺口正是 **E2E**：拉起真实的浏览器 + 真实的 Next.js server，从用户视角断言"点击 X 之后看到 Y"。M2a 要交付可发布级 demo（Round 0 → tool_call → Round 1 全链路），没有 E2E 兜底就是**每次改完都手动过一遍**——冲刺阶段这是压死人的时间黑洞。
 
 ## 候选方案
 
@@ -22,8 +22,8 @@ M2a 起手的 Agent Loop 会引入多步交互链路：**用户点击 → LLM �
 | --- | --- | --- |
 | **A · Playwright**（本 ADR 选） | 一等 Next.js 支持（内建 `webServer` 集成）；Trace Viewer 可视化重放 DOM/网络/console；同一 API 支持 Chromium/Firefox/WebKit；Anthropic 官方 [Playwright MCP](https://github.com/executeautomation/mcp-playwright) 生态成熟，M2b/M3 可让 AI 辅助写用例 | 完整浏览器 binary 300+ MB；测试文件夹要和 Vitest 隔离（不同 runner） |
 | B · Cypress | UI 时间旅行调试直观 | 只支持 Chromium 家族；架构基于 iframe 有诸多限制（跨域、Multi-tab、下载等）；对 Next 15/16 的兼容比 Playwright 慢半拍 |
-| C · WebdriverIO / Selenium | 老牌广谱 | 对 SPA 的适配薄；配置繁琐；面试信号弱（"用了 selenium" 现在几乎是负面 signal） |
-| D · 完全不做 E2E | 零依赖 | Phase 1a Agent Loop 上线后回归测试全靠人眼；面试可讲的测试深度只到单测层 |
+| C · WebdriverIO / Selenium | 老牌广谱 | 对 SPA 的适配薄；配置繁琐；技术信号弱（"用了 selenium" 现在几乎是负面 signal） |
+| D · 完全不做 E2E | 零依赖 | Phase 1a Agent Loop 上线后回归测试全靠人眼；可讲的测试深度只到单测层 |
 
 ## 决定
 
@@ -44,7 +44,7 @@ Playwright 的 `webServer` 配置可以**自动拉起 `pnpm dev`**：
 
 Agent Loop 的失败往往不是"控件点错"，而是"tool_call 帧解析漏了一段"、"AbortController 断链"这类深层链路问题。Playwright 挂了自动录：**DOM 快照 + 网络请求 + console 输出 + 时间线**，一份 zip 打开 `npx playwright show-trace` 就能像看录像一样重放。
 
-Cypress 也有 time-travel 但只到 DOM 层，网络/console 弱。**手写 Agent Loop 出 bug 时，Trace Viewer 能省 10 倍调试时间**——这就是"面试可讲的测试基础设施"里的具体成本节省。
+Cypress 也有 time-travel 但只到 DOM 层，网络/console 弱。**手写 Agent Loop 出 bug 时，Trace Viewer 能省 10 倍调试时间**——这就是"可讲的测试基础设施"里的具体成本节省。
 
 ### 3. Playwright MCP 生态铺路 M2b/M3
 
@@ -100,7 +100,7 @@ Anthropic 官方 `@playwright/mcp` 让 AI（Claude Desktop / Claude Code）可�
 - [ADR-009 · AI 参与测试与修复的风险分级](009-ai-test-autonomy-tiers.md) —— 明确 E2E 各 Tier 的 AI 参与边界
 - [ADR-001 · 手写 SSE vs Vercel AI SDK](001-choose-ai-sdk.md) —— 一等测试基础设施是"拒绝抽象"策略能持续走下去的前提
 
-## 面试问答备忘
+## 问答备忘
 
 **Q：为什么不用 Cypress？前端圈用它的更多。**
 A：**Next.js 集成是关键**。Playwright 有 `webServer` 配置自动拉 dev server，Cypress 得自己写脚本管理生命周期。加上 Cypress 基于 iframe 架构，跨域/多 tab/下载都受限——虽然一般项目不碰这些，但 FEDrill 后期要接 MCP、Piston 等外部服务时，架构灵活性差别就出来了。

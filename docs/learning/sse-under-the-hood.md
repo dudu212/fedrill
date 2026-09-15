@@ -134,7 +134,7 @@ SDK 里 `streamText` 做的事，本质就是上面这两段代码，加上：
 
 **升级到 SDK 的信号**：M2 加 tool calling 时。手写协议维护成本会跳升。
 
-## 七、面试话术钩子
+## 七、知识点钩子
 
 - "为什么不用 EventSource？"—— POST + header 限制
 - "TCP chunk 边界不等于 SSE 事件边界怎么办？"—— buffer + split + pop

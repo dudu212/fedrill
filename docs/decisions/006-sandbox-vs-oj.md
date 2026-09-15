@@ -6,7 +6,7 @@
 
 ## 背景
 
-FEDrill 定位为"前端秋招题库 AI 教练"——手撕题 / 算法 / 八股三品类，MVP 聚焦手撕题。M1 已跑通 Web Worker 沙箱 + 手写 `deepEqual` + Round 0 AI 引导对话。
+FEDrill 定位为"前端题库 AI 教练"——手撕题 / 算法 / 八股三品类，MVP 聚焦手撕题。M1 已跑通 Web Worker 沙箱 + 手写 `deepEqual` + Round 0 AI 引导对话。
 
 M1 收尾时面临一个岔路：**是否引入开源 OJ 平台**（HydroOJ / Judge0 / OnlineJudge）作为判题基座，自己只做 AI 模块？
 
@@ -15,7 +15,7 @@ M1 收尾时面临一个岔路：**是否引入开源 OJ 平台**（HydroOJ / Ju
 | 方案 | 判题模型 | 沙箱 | 代码量 | 优点 | 缺点 |
 | --- | --- | --- | --- | --- | --- |
 | **A · 继续自研当前 minimal 判题器** | 函数调用式 · `fn(...input)` | Web Worker + `new Function` + 3s 超时 | `lib/sandbox/` <200 行 | 全链路可控可讲；支持函数入参 / 活 Promise / 循环引用（`{__fn}/{__val}/{__throw}` 逃生舱）；同 tab 实时判题喂 AI | `deepEqual` 有盲区（Symbol / Map / Set / 稀疏数组）；判题深度目前只到 basic |
-| **B · 引入 Judge0 / HydroOJ + 自加 AI 模块** | stdin → stdout | Docker 容器 | 引入 + 运维 + 适配层 | 判题成熟；多语言原生支持；用户 / 排行榜 / 讨论区已备 | 判题模型与前端手撕根本不匹配；90% 功能用不上；异步批处理体验断裂；简历叙事被稀释 |
+| **B · 引入 Judge0 / HydroOJ + 自加 AI 模块** | stdin → stdout | Docker 容器 | 引入 + 运维 + 适配层 | 判题成熟；多语言原生支持；用户 / 排行榜 / 讨论区已备 | 判题模型与前端手撕根本不匹配；90% 功能用不上；异步批处理体验断裂；技术叙事被稀释 |
 
 ## 决定
 
@@ -45,19 +45,19 @@ FEDrill 的 AI 上下文注入依赖一个关键前提：**用户代码 + 测试
 
 换句话说，开源 OJ 给的是"批处理判题"，FEDrill 需要的是"实时同 tab 判题"。
 
-### 4. 简历叙事价值悬殊
+### 4. 技术叙事价值悬殊
 
-用开源 OJ + AI 模块，面试官视角：
+用开源 OJ + AI 模块，教练视角：
 
 > "他用 HydroOJ 起的，自己加了个 AI 对话框。"
 
 技术贡献只有那个 AI 对话框，判题、沙箱、SSE 都是别人的。
 
-自研 minimal + Agent Loop，面试官视角：
+自研 minimal + Agent Loop，教练视角：
 
 > "他手写了浏览器沙箱、SSE 流协议、Agent Loop、上下文注入机制。"
 
-每一层都是可深挖的面试话题。[CLAUDE.md](../../CLAUDE.md) 明写："许多技术决策刻意拒绝一把梭抽象，转而手写可以在面试里讲清楚的实现"——引开源和这条原则直接冲突。
+每一层都是可深挖的技术话题。[CLAUDE.md](../../CLAUDE.md) 明写："许多技术决策刻意拒绝一把梭抽象，转而手写可以讲清楚的实现"——引开源和这条原则直接冲突。
 
 ## 什么情况下会推翻这个决策
 
@@ -83,7 +83,7 @@ FEDrill 的 AI 上下文注入依赖一个关键前提：**用户代码 + 测试
 - **M2** · Reference implementation differential testing（用户代码 vs 参考实现对拍随机输入）
 - **M3+** · 属性化测试（fast-check）可选接入
 
-## 面试问答备忘
+## 问答备忘
 
 **Q：为什么不用现成的判题系统？**
 A：**产品模型不匹配**。开源 OJ 是 stdin→stdout 的批处理判题，我们需要**函数调用式 + 浏览器内同 tab 实时判题**，让 AI 能拿到用户此刻的代码和结果做上下文。硬接反而增加适配复杂度。
@@ -109,7 +109,7 @@ A：`SandboxRequest` / `SandboxResponse` 已经是标准消息协议（[lib/sand
 
 ## 一句话叙事
 
-> FEDrill 的差异化在"AI 面试官"，不在"评测器"。评测器只要够用就行——够用的标准是"能判 basic + 能配合 AI 触发边界用例进沙箱"，这条 minimal 路径的总投入不到自建/引入 OJ 的 1/10，但面试可讲价值是 10 倍——因为面试官没见过前端候选人做"AI 判题"，却看过一百个 LeetCode 复刻。
+> FEDrill 的差异化在"AI 教练"，不在"评测器"。评测器只要够用就行——够用的标准是"能判 basic + 能配合 AI 触发边界用例进沙箱"，这条 minimal 路径的总投入不到自建/引入 OJ 的 1/10，但可讲价值是 10 倍——因为教练没见过前端候选人做"AI 判题"，却看过一百个 LeetCode 复刻。
 
 ## 结果与回顾
 
@@ -117,4 +117,4 @@ A：`SandboxRequest` / `SandboxResponse` 已经是标准消息协议（[lib/sand
 
 - [ ] M2 `check_edge_case` 工具上线后，实测"AI 动态生成边界用例进沙箱"的成功率
 - [ ] Reference impl differential testing 覆盖率
-- [ ] 面试实际讲这段的效果（哪些追问最常出现）
+- [ ] 实际讲这段的效果（哪些追问最常出现）

@@ -60,10 +60,10 @@ export type SessionPatch = Partial<
 >
 
 /**
- * 会话仓库接口。稳定 API，实现层可替换（M1–M3 用 LocalStorage，M4 换 Supabase 不改调用方）。
+ * 会话仓库接口。稳定 API，实现层可替换（M1–M3 用 LocalStorage，M4 换 PostgreSQL 不改调用方）。
  *
  * 所有方法均 async——LocalStorage 实现下用 `Promise.resolve` 包裹本地读写，
- * Supabase 实现下才是真正的网络 I/O。上层 await 一次就好。
+ * PostgreSQL 实现下才是真正的网络 I/O。上层 await 一次就好。
  */
 export interface SessionRepo {
   /** 读取该 problemId 的会话；不存在返回 null */
@@ -159,7 +159,7 @@ export class LocalStorageSessionRepo implements SessionRepo {
 }
 
 /**
- * 单例工厂——M4 换 Supabase 时改这里，调用方零改动。
+ * 单例工厂——M4 换 PostgreSQL 时改这里，调用方零改动。
  */
 let _instance: SessionRepo | null = null
 

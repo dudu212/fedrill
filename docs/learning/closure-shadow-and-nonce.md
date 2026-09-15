@@ -4,7 +4,7 @@
 >
 > **本文档按 STAR 结构写**(情境-任务-行动-成果),这是 FEDrill 学习/决策文档统一格式。
 >
-> 面试话术钩子:「Web Worker 沙盒的结果伪造漏洞,我做了防御纵深——闭包 shadow 挡直接调用,nonce 挡元编程绕过,并明确记录了这不是完整方案,规划了 M3/M4 换 QuickJS-WASM 的路径。」
+> 知识点钩子:「Web Worker 沙盒的结果伪造漏洞,我做了防御纵深——闭包 shadow 挡直接调用,nonce 挡元编程绕过,并明确记录了这不是完整方案,规划了 M3/M4 换 QuickJS-WASM 的路径。」
 
 ---
 
@@ -216,7 +216,7 @@ ctx.postMessage({ type: 'error', nonce, error: '...' })
 - [ ] M4 上线前决策:换 iframe sandbox / QuickJS-WASM(另开 ADR)
 - [ ] harness 页面 production 屏蔽(M4 前)
 
-### 面试话术升级(前后对比)
+### 讲解要点升级(前后对比)
 
 **改前**(登记漏洞路径):
 
@@ -241,4 +241,4 @@ ctx.postMessage({ type: 'error', nonce, error: '...' })
 - [ADR-009 · AI 测试自主性 Tier 分级](../decisions/009-ai-test-autonomy-tiers.md) —— 本次流程的规矩
 - [ADR-006 · 自研 minimal 判题器 vs 引入开源 OJ](../decisions/006-sandbox-vs-oj.md) —— 沙盒选型
 - [sandbox-e2e-harness.md](sandbox-e2e-harness.md) —— Step 5 环境迁移与 6 类攻击面全景
-- [ai-testing-interview.md](ai-testing-interview.md) —— 22 题 AI 项目测试面试题
+- [ai-testing-interview.md](ai-testing-interview.md) —— 22 题 AI 项目测试题目

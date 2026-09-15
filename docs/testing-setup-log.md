@@ -16,7 +16,7 @@
 
 | 阶段 | 产出 | 归属 |
 |---|---|---|
-| **调研** | [AI测试工具调研.md](AI测试工具调研.md)、[面试题笔记](learning/ai-testing-interview.md) | 战略文档 |
+| **调研** | [AI测试工具调研.md](AI测试工具调研.md)、[题目笔记](learning/ai-testing-interview.md) | 战略文档 |
 | **ADR-009** | [三档风险分级](decisions/009-ai-test-autonomy-tiers.md) | 决策 |
 | **Step 1-2** | Vitest + happy-dom + 3 条 co-located 单测 | Tier 1 基建 |
 | **Step 3** | [playwright.config.ts](../playwright.config.ts) + [smoke.spec.ts](../tests/e2e/smoke.spec.ts) + npm scripts | Tier 1 基建 |
@@ -33,7 +33,7 @@
 
 **做了什么**:先写调研,不急着装依赖。产出两份文档:
 - [AI测试工具调研.md](AI测试工具调研.md)——测试金字塔 FEDrill 版、每层选型、避坑清单
-- [learning/ai-testing-interview.md](learning/ai-testing-interview.md)——22 题面试话术
+- [learning/ai-testing-interview.md](learning/ai-testing-interview.md)——22 题讲解要点
 
 **目的**:LLM 项目和普通前端项目多了三层风险(非确定性、沙盒安全、Agent 调度),普通「Jest + Playwright」只能盖住一半。先把「测什么、用什么工具、什么阶段做」想清楚,后面每一步都能对上位置。
 
@@ -141,7 +141,7 @@ claude mcp add playwright --scope user npx @playwright/mcp@latest
 - `.gitignore` 加入 `/.playwright-mcp/`(MCP snapshot 缓存目录)
 
 **顺手发现的问题**:
-- `<title>` 还是 `Create Next App`,应改成 `FEDrill · 前端秋招 AI 教练`。在 [app/layout.tsx](../app/layout.tsx) 里改 `metadata`。属 Tier 1,单独提 PR 时顺手带。
+- `<title>` 还是 `Create Next App`,应改成 `FEDrill · 前端题库 AI 教练`。在 [app/layout.tsx](../app/layout.tsx) 里改 `metadata`。属 Tier 1,单独提 PR 时顺手带。
 
 ---
 
@@ -165,7 +165,7 @@ claude mcp add playwright --scope user npx @playwright/mcp@latest
 
 **关键决策**(与调研 §3.5 对齐但环境迁移):
 - 用 Playwright + harness 而非 happy-dom + Vitest,因为 Web Worker 语义只有真浏览器有
-- RT-03 走「修复」而非「登记」,产出**防御纵深** face 面试话术
+- RT-03 走「修复」而非「登记」,产出**防御纵深** face 讲解要点
 
 **验证**:
 - `pnpm test:e2e sandbox-redteam --reporter=list` → 6 passed (9.5s)
@@ -227,5 +227,5 @@ claude mcp add playwright --scope user npx @playwright/mcp@latest
 
 - 战略层:[AI测试工具调研.md](AI测试工具调研.md)
 - 决策:[ADR-009 AI 测试自主性](decisions/009-ai-test-autonomy-tiers.md) · [ADR-010 Playwright E2E](decisions/010-playwright-e2e.md)
-- 学习:[面试题笔记 22 问](learning/ai-testing-interview.md)
+- 学习:[题目笔记 22 问](learning/ai-testing-interview.md)
 - 里程碑:[roadmap-m2.md](roadmap-m2.md)

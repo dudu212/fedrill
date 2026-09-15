@@ -51,20 +51,20 @@ M5 计划把 FEDrill 的能力暴露成 [MCP(Model Context Protocol)](https://mo
 
 | 方案 | 优点 | 缺点 |
 | --- | --- | --- |
-| **monorepo 子包** | **直接复用 `data/problems`** 零改动 · 版本与主项目同步 · 一个 repo 面试易讲 | pnpm workspace 稍复杂 |
+| **monorepo 子包** | **直接复用 `data/problems`** 零改动 · 版本与主项目同步 · 一个 repo 易讲 | pnpm workspace 稍复杂 |
 | 独立 repo | 边界干净 · 独立发布节奏 | **题库需要复制或发 npm 依赖** · 更新不同步 · 两个 repo 的维护成本 |
 
 **选 monorepo 子包**。理由:
 - 题库(`data/problems/*.ts`)是 MCP 的核心数据源 · **跨 repo 同步会退化成"复制粘贴"** · 违反 SSOT
 - pnpm workspace 是标配 · 加一行 `packages/*` 即可
-- 面试叙事:"我用 monorepo 是因为主站和 MCP 共享题库这个单一事实源"
+- 技术叙事:"我用 monorepo 是因为主站和 MCP 共享题库这个单一事实源"
 
 ### 决策 4 · v1 不发 npm · 本地 dev 起手
 
 | 方案 | 优点 | 缺点 |
 | --- | --- | --- |
 | **不发 · 直接跑本地路径** | 快 · 迭代无阻力 · 挂载配置写绝对路径就能用 | 只有作者自己方便挂 |
-| 立即发 npm | 任何人 `npx @fedrill/mcp` 即用 · 简历上写"发布到 npm" | 发布前每次改都要 bump 版本 · 早期反复迭代太重 |
+| 立即发 npm | 任何人 `npx @fedrill/mcp` 即用 · 项目里写"发布到 npm" | 发布前每次改都要 bump 版本 · 早期反复迭代太重 |
 
 **选不发**。理由:
 - v1 阶段 tool 设计还会变 · 发出去反而是包袱

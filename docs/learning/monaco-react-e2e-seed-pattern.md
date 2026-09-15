@@ -4,7 +4,7 @@
 >
 > **本文档按 STAR 结构写**(情境-任务-行动-成果),沉淀"业务闭环 E2E 骨架"落地过程 + 3 个可讲清楚的踩坑。
 >
-> 面试话术钩子:「补 M1 手撕闭环 E2E 时,踩到 `@monaco-editor/react` 对程序化 setValue 不触发 React onChange 的坑,试了 setValue / pushEditOperations 都不行;换思路——**不模拟用户输入,预置数据源**——直接 seed SessionRepo localStorage 让页面 useEffect 自己拿到我们的代码,一次成功。抽象出通用规律:测受控组件时,预置底层状态源 > 模拟 UI 输入。」
+> 知识点钩子:「补 M1 手撕闭环 E2E 时,踩到 `@monaco-editor/react` 对程序化 setValue 不触发 React onChange 的坑,试了 setValue / pushEditOperations 都不行;换思路——**不模拟用户输入,预置数据源**——直接 seed SessionRepo localStorage 让页面 useEffect 自己拿到我们的代码,一次成功。抽象出通用规律:测受控组件时,预置底层状态源 > 模拟 UI 输入。」
 
 ---
 
@@ -20,7 +20,7 @@
 
 **这时候动手的理由**:
 - M1 UI 已经稳定(Phase 1a 客户端 Agent Loop 已提交),现在写 e2e 不算白写
-- 简历"三层测试网"叙事需要业务闭环这一条支撑
+- 项目"三层测试网"叙事需要业务闭环这一条支撑
 - Playwright MCP 已经装完,遇到问题可以让 AI 自己看浏览器状态
 
 ---
@@ -240,7 +240,7 @@ Next dev/build 通过内置 dotenv 读 `.env.local`,但:
 
 **同一规律的反面**:如果测试跑挂了但 `pnpm dev` 是好的,先怀疑**测试进程没拿到 env**,不是 code bug。
 
-### 面试话术升级
+### 讲解要点升级
 
 **弱版**:「我写了 4 条 Playwright e2e,覆盖 M1 主流程」
 
@@ -255,7 +255,7 @@ Next dev/build 通过内置 dotenv 读 `.env.local`,但:
 ### 已开启的后续动作
 
 - [x] 本 STAR 学习笔记
-- [x] 简历 FEDrill Bullet 4 更新加 BF-04
+- [x] 项目 FEDrill Bullet 4 更新加 BF-04
 - [ ] M2 · BF-05 · BYOK 端到端(设置 key → 客户端直连 DeepSeek)
 - [ ] M2 · BF-06 · streaming 中断(点中断 → streaming 立即停 · 无残留状态)
 - [ ] M2 · Playwright 视觉快照(Monaco 布局 / chat 气泡)

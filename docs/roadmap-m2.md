@@ -2,20 +2,20 @@
 
 > 版本 v1 · 2026-08-27
 >
-> 目标：秋招简历可放版本 · 9/15 硬锁 M2a
+> 目标：可发布版本 · 9/15 硬锁 M2a
 >
 > 单一事实源：本文档为 M2 期开发/学习节奏的权威。改动优先动这里，其他文档只挂锚点。
 
 ## 一、结论
 
 - M1 功能已完整交付（见 [README.md](../README.md)），进入 M2 冲刺
-- M2 拆成 **M2a（必做，9/15 前锁）+ M2b（加分区，秋招投递后无死线）**
+- M2 拆成 **M2a（必做，9/15 前锁）+ M2b（加分区，投递后无死线）**
 - 双护栏：**时间锁**（9/15）+ **范围锁**（不复刻 LeetCode）
 
 ## 二、时间锁
 
-- **2026-09-15**：M2a 版本冻结 → 简历三条硬亮点定型
-- **秋招投递期间**：产品改动全停，专注面试
+- **2026-09-15**：M2a 版本冻结 → 三条核心技术亮点定型
+- **投递期间**：产品改动全停，专注准备
 - **投递后**：解冻做 M2b（加分区，无死线）
 
 从今天（08/27）到 9/15 共 **19 天**，按工作日 1.5h + 周末 3.5h 估算 ≈ **39 小时**投入窗口。
@@ -83,7 +83,7 @@
 
 ### Phase 1b · Trace UI + Round 1（09/06–09/12，7 天）
 
-**目标**：简历级别的可演示形态。
+**目标**：可演示形态。
 
 **任务清单**：
 
@@ -98,9 +98,9 @@
 - 错误处理：tool 失败**不 throw**，标准化错误 shape 塞回 LLM
 - Trace / Observability：每步 timestamp / tokens / tool_result
 
-### Phase 1c · 打磨 + 上线 + 简历定稿(09/02–09/06,✅ 主体完成 · 提前 9 天)
+### Phase 1c · 打磨 + 上线 + 亮点定稿(09/02–09/06,✅ 主体完成 · 提前 9 天)
 
-**目标**:上线可访问版本、简历亮点定稿。**已达成:Vercel 上线 fedrill.vercel.app + 零信任 BYOK + Trace UI 卡片化**。
+**目标**:上线可访问版本、技术亮点定稿。**已达成:Vercel 上线 fedrill.vercel.app + 零信任 BYOK + Trace UI 卡片化**。
 
 **任务清单**:
 
@@ -109,9 +109,9 @@
 - [x] Vercel 上线 · [fedrill.vercel.app](https://fedrill.vercel.app)
 - [x] BYOK · 访客自带 DeepSeek API Key
 - [x] **零信任 BYOK · 浏览器 CORS 直连 DeepSeek**(源上线本来是 M5,提前到 Phase 1c 落地)
-- [x] README · 简历亮点定稿 + 在线体验链接 + 信任模型说明
+- [x] README · 技术亮点定稿 + 在线体验链接 + 信任模型说明
 - [ ] (可选)Monaco 慢加载优化(dynamic import + prefetch)· M2b 处理
-- [ ] (可选)Demo GIF · 最终投简历前一周录一次
+- [ ] (可选)Demo GIF · 最终上线前一周录一次
 - [ ] (可选)写 [docs/learning/agent-loop-implementation.md](learning/agent-loop-implementation.md)(1000-2000 字 · M2 学习沉淀)
 
 **超原计划的额外产出**:
@@ -122,7 +122,7 @@
 **学习焦点**:
 
 - 复习:把 Agent Loop / SessionRepo / Round 状态机的实现细节讲一遍给自己听
-- 面试话术准备:
+- 讲解要点准备:
   - "你的 Agent Loop 怎么实现的?"
   - "为什么不用 LangChain?"
   - "tool 失败了 LLM 怎么知道?"
@@ -132,9 +132,9 @@
 
 **→ 【2026-09-15 · 锁 M2a】**
 
-### Phase 2 · M2b 加分区（秋招投递后启动）
+### Phase 2 · M2b 加分区（投递后启动）
 
-**无死线**，秋招投递期间冻结。
+**无死线**，投递期间冻结。
 
 - 补齐其他 7 个 tool：`check_edge_case` / `analyze_complexity` / `suggest_ts_types` / `read_current_code` / `add_test_case` 等
 - Round 2/3/4 分档 prompt + 题目 `edgeCases` 填 round2–4
@@ -150,8 +150,8 @@
 | 08/30–09/01（Ph1a） | Agent Loop v1 + `run_tests` | 进阶 · while+max_iter / streaming 分类 | 端到端跑通 · 状态栏 · 语义一致 | ✅ **提前 4 天** |
 | 09/02–09/02（Ph1b） | Round 1 prompt + Trace UI 卡片化 | 进阶 · Latest Ref Pattern | Round 0→1 端到端 + tool card 4 态 | ✅ **提前 10 天** |
 | 09/02–09/06（Ph1c） | Vercel 上线 + 零信任 BYOK + README 定稿 | CORS + 信任模型 | fedrill.vercel.app 上线 · Key 不上服务端 | ✅ **提前 9 天** |
-| **09/15 锁 M2a** | | | 简历三条硬亮点定型 | 🎯 |
-| 秋招投递后（Ph2） | M2b 加分区 | 精通 · Event Loop Engineering | 无死线 | ⏸ |
+| **09/15 锁 M2a** | | | 三条核心技术亮点定型 | 🎯 |
+| 投递后（Ph2） | M2b 加分区 | 精通 · Event Loop Engineering | 无死线 | ⏸ |
 
 ## 六、M2a 验收标准（全部满足才算完成）
 
@@ -159,8 +159,8 @@
 - [ ] 端到端链路：Round 0 挂 → AI 触发 run_tests → 用户改代码 → Agent 再跑 → 全过 → 自动进 Round 1 → AI 边界反问 —— **全链路无需用户点任何工具按钮**
 - [ ] 刷新页面对话历史保留（SessionRepo 生效）
 - [ ] 至少 3 条 vitest 单测通过（沙箱 / prompt / summary）
-- [ ] [README.md](../README.md) 简历三条硬亮点写好
-- [ ] 30 秒 demo 视频/GIF 录好，能贴简历/GitHub
+- [ ] [README.md](../README.md) 三条核心技术亮点写好
+- [ ] 30 秒 demo 视频/GIF 录好，能贴 GitHub
 
 ## 七、风险 + 缓解
 
@@ -181,9 +181,9 @@
 
 答不清时 → 停 → 读文档 / 看代码 → 直到答得清。**这条规则本身**就是 event loop engineering 的入门课：给自己一个 tick 加终止条件。
 
-## 九、简历三条硬亮点（Phase 1a 完成 · 2026-09-01 定稿）
+## 九、三条核心技术亮点（Phase 1a 完成 · 2026-09-01 定稿）
 
-**M2a Phase 1a 端到端跑通后正式定稿。完整版落在 [README.md 简历亮点节](../README.md#简历亮点面试话术钩子)，含 ADR 深挖链接。**
+**M2a Phase 1a 端到端跑通后正式定稿。完整版落在 [README.md 技术亮点节](../README.md#技术亮点知识点钩子)，含 ADR 深挖链接。**
 
 1. **手写 Agent Loop + tool_use 协议**（客户端主导 + 服务端最薄）
    - ReAct 200 行 · `MAX_ITERATIONS=10` 护栏 · AsyncGenerator 出流 · AbortController 端到端

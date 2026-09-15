@@ -1,6 +1,6 @@
 # Decisions · 技术选型日志（ADR）
 
-每份决策一个文件，命名 `NNN-topic.md`。目的：把"当时为什么选 A 不选 B"沉淀下来，面试时可以直接讲。
+每份决策一个文件，命名 `NNN-topic.md`。目的：把"当时为什么选 A 不选 B"沉淀下来，讲解时可以直接讲。
 
 ## 模板
 
@@ -39,3 +39,4 @@
 - [x] `010-playwright-e2e.md` —— 横切 · Testing，Playwright E2E 与 chromium-only 起步（Accepted）
 - [x] `011-client-side-agent-loop.md` —— L2，Agent Loop 在客户端跑、服务端只做 LLM 代理（Accepted）
 - [x] `012-node-sandbox-isolation.md` —— L6，MCP 判题 tool 的 Node 侧沙箱隔离（worker_threads + vm）（Accepted）
+- [x] `013-postgres-over-supabase.md` —— L4，会话持久化用裸 PostgreSQL 而非 Supabase（Accepted）

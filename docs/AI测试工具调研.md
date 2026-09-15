@@ -24,7 +24,7 @@ FEDrill 和普通前端项目相比多了三层特殊风险，普通测试策略
 
 ```
                   ┌────────────────────────┐
-                  │  LLM Eval / 面试官打分  │   慢、贵、非确定
+                  │  LLM Eval / 教练打分  │   慢、贵、非确定
                   │  (promptfoo, ragas)    │
                   ├────────────────────────┤
                   │      E2E · Playwright   │   中等，最贴近用户
@@ -209,11 +209,11 @@ console.log('x'.repeat(1e8))
 
 ---
 
-## 六、和简历亮点的绑定
+## 六、和技术亮点的绑定
 
 四大亮点每一个都能挂一份「我怎么测的」故事：
 
-| 亮点 | 挂钩测试 | 面试话术钩子 |
+| 亮点 | 挂钩测试 | 知识点钩子 |
 |---|---|---|
 | 手写 LLM Harness | Vitest 单测 SSE 解析 + MSW 集成回放 | 「SSE 帧半包/粘包我用 fixture 回放测了 12 种边界」 |
 | 手写 Agent Loop | promptfoo eval + Playwright MCP 全链路 | 「tool 调度正确率靠 eval 集守，回归靠 MCP 让 AI 自己点 UI」 |
@@ -228,7 +228,7 @@ console.log('x'.repeat(1e8))
 - [ ] `pnpm add -D @playwright/test && npx playwright install chromium`
 - [ ] 建 `tests/{unit,integration,e2e,security,eval}` 五目录(README 说明每层跑什么)
 - [x] [`docs/decisions/009-ai-test-autonomy-tiers.md`](decisions/009-ai-test-autonomy-tiers.md) ADR 记录 AI 自主性风险分级
-- [ ] `docs/learning/ai-testing-interview.md` 面试题笔记(本次一起产出)
+- [ ] `docs/learning/ai-testing-interview.md` 题目笔记(本次一起产出)
 - [ ] M1 结束时挑 5 个红队用例先跑起来，比理论更能镇场
 
 ---

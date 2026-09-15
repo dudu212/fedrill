@@ -15,7 +15,7 @@ M1 要落 F-004 · LLM 流式对话。前端 → Next.js Route Handler → DeepS
 | 方案 | 优点 | 缺点 |
 | --- | --- | --- |
 | A · Vercel AI SDK | `streamText` + `useChat` 五行搞定；provider 可切换；backpressure/error 处理已封装 | 抽象泄漏到客户端（DataStream 协议、Message 结构不透明）；调 tool calling 时得读 SDK 源码；引入 3 个包 |
-| B · 0 依赖手写 fetch + Web Streams | 全链路 100 行内看得清；教育价值高；面试可讲 SSE / ReadableStream / AbortController；客户端只 20 行 | 需要自己处理 SSE 帧解析、`[DONE]` 终止、error mapping；后期加 tool calling 要自己实现协议 |
+| B · 0 依赖手写 fetch + Web Streams | 全链路 100 行内看得清；教育价值高；可讲 SSE / ReadableStream / AbortController；客户端只 20 行 | 需要自己处理 SSE 帧解析、`[DONE]` 终止、error mapping；后期加 tool calling 要自己实现协议 |
 | C · 只服务端用 SDK，客户端裸 fetch | 折中；upstream 换 provider 便宜 | 反而两边都要懂，心智负担最大 |
 
 ## 决定
@@ -25,7 +25,7 @@ M1 要落 F-004 · LLM 流式对话。前端 → Next.js Route Handler → DeepS
 1. **学习优先**：L1 的核心目标是搞懂 harness 内部，用 SDK 就跳过了整个 SSE 层
 2. **代码可读**：全链路（route.ts 78 行 + chat-demo/page.tsx 130 行）完全可控，任何 bug 都能读代码定位
 3. **未来切换成本低**：只要 `/api/chat` 端点契约（POST messages → 流文本）不变，任何时候可以把 route.ts 换成 SDK 实现，客户端不动
-4. **面试可讲的强度**：SSE 帧解析 + AbortController 传递链 + Web Streams 三点连讲 > "我用了 AI SDK"
+4. **可讲的强度**：SSE 帧解析 + AbortController 传递链 + Web Streams 三点连讲 > "我用了 AI SDK"
 
 ## 具体实现
 

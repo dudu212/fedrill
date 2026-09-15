@@ -1,6 +1,6 @@
 # Learning · 学习笔记索引
 
-每学一个概念开一节，格式：**要点 + 我在 FEDrill 哪里用了 + 参考链接**。这是复习和面试话术的双料底稿。
+每学一个概念开一节，格式：**要点 + 我在 FEDrill 哪里用了 + 参考链接**。这是复习和讲解要点的双料底稿。
 
 ## 待写清单
 
@@ -38,7 +38,7 @@
 - [ ] `mcp-transport.md` —— stdio vs SSE vs HTTP
 
 ### 横切 · Testing & Quality
-- [x] [`ai-testing-interview.md`](ai-testing-interview.md) —— AI 项目测试面试题 22 问（Vitest / Playwright / promptfoo / 沙盒 / Agent eval / 成本观测）
+- [x] [`ai-testing-interview.md`](ai-testing-interview.md) —— AI 项目测试题目 22 问（Vitest / Playwright / promptfoo / 沙盒 / Agent eval / 成本观测）
 - [x] [`sandbox-e2e-harness.md`](sandbox-e2e-harness.md) —— happy-dom 无 Worker 翻车 → Playwright + harness 页面迁移;含 test harness / page.evaluate / structured clone / Next 私有目录等 6 个知识点
 - [x] [`closure-shadow-and-nonce.md`](closure-shadow-and-nonce.md) —— RT-03 结果伪造双层防御 · STAR 结构复盘 · Closure Shadow + Nonce 通用范式
 - [x] [`promptfoo-eval-baseline.md`](promptfoo-eval-baseline.md) —— Step 6 骨架 · Round 0 追问 golden set 首战 4/5 · 挖到 prompt 优先级冲突 · STAR 结构 · LLM eval 波动性 / prompt 耦合系统 / judge 偏见等 3 条通用规律

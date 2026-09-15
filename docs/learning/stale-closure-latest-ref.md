@@ -180,7 +180,7 @@ const stableRunTests = useLatestCallback(runTests)
 
 要让引用永远稳定,只有 `useRef` 能做到——因为 ref 是"escape hatch",它跳出了 React 的响应式追踪。
 
-## 八、面试问答备忘
+## 八、问答备忘
 
 **Q:什么是 stale closure?**
 A:JavaScript 闭包会记住定义它时的变量值。在 React 里,每次 render 都创建新的函数(新闭包),它们各自记住自己那一帧的 state。如果某段代码持有一个"旧闭包"(比如 setInterval 里的回调),它读到的 state 就永远停留在最初那一帧,即使外层的 state 已经变了。这就是 stale closure。

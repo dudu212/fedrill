@@ -21,7 +21,7 @@ M2a Agent Loop 起手前的第二个"要不要用现成"决策。[ADR-002](002-h
 | 方案 | 优点 | 缺点 |
 | --- | --- | --- |
 | **A · 手写 Agent Loop**（本 ADR 选） | 100–200 行可控可讲；沿用 ADR-002 的架构；Provider 层薄封装即可切换 | tool 组合 / 分支 / retry 机制全要自己实现 |
-| **B · 用 LangGraph** | 状态图原生支持多分支/条件跳转；LangSmith 一键接观测；Round 0–4 阶梯可以作为节点 | 学习曲线陡；抽象层数深（Graph → Node → Runnable → Model）；`@langchain/langgraph` + `@langchain/core` + provider 包共 5+ 依赖；面试价值几乎全归 LangChain 而非项目 |
+| **B · 用 LangGraph** | 状态图原生支持多分支/条件跳转；LangSmith 一键接观测；Round 0–4 阶梯可以作为节点 | 学习曲线陡；抽象层数深（Graph → Node → Runnable → Model）；`@langchain/langgraph` + `@langchain/core` + provider 包共 5+ 依赖；技术价值几乎全归 LangChain 而非项目 |
 | **C · 用 LangChain 的 `AgentExecutor`（旧 API）** | 早期教程多 | 官方已宣告 legacy，主推 LangGraph；不建议新项目采用 |
 
 ## 决定
@@ -40,7 +40,7 @@ LangGraph 的核心卖点是**状态图**：节点间可以按条件跳转，比
 - **判断跳转靠的是**"basic 用例是否全过"这一个布尔量，一句 `if allPassed` 就够
 - **真正的复杂度在 prompt 分档 + tool 集合**，不是控制流
 
-LangGraph 的图能力 90% 用不上，用了反而把简单的 if/else 藏进 Graph 抽象里，**代码可读性和面试可讲性都变差**。
+LangGraph 的图能力 90% 用不上，用了反而把简单的 if/else 藏进 Graph 抽象里，**代码可读性和可讲性都变差**。
 
 ### 2. LangChain 的抽象泄漏臭名昭著
 
@@ -48,19 +48,19 @@ LangGraph 的图能力 90% 用不上，用了反而把简单的 if/else 藏进 G
 
 反观手写：**ReAct 循环 + tool_use 消息协议是行业稳定标准**，2022 年的 ReAct 论文到 2026 年协议核心没变。**学一次用十年**。
 
-### 3. 简历叙事更不可替代
+### 3. 技术叙事更不可替代
 
-用 LangGraph 起 Agent 的面试话头：
+用 LangGraph 起 Agent 的话题：
 
 > "我用 LangGraph 定义了 Round 0–4 五个节点。"
 
-面试官下一问："那 tool_use 协议底层长什么样？" —— 答不上就穿帮。
+教练下一问："那 tool_use 协议底层长什么样？" —— 答不上就穿帮。
 
-手写的面试话头：
+手写的话题：
 
 > "我手写了 ReAct 循环，处理了 tool_call streaming 拼装、max_iterations 护栏、tool 错误 shape 标准化，Provider 适配层解决了 Anthropic vs OpenAI 消息结构差异。"
 
-**每一句都是可深挖的子话题**，任何一个方向面试官追问都答得动。这才是 M2a 简历三条硬亮点里"Agent Loop"该有的密度。
+**每一句都是可深挖的子话题**，任何一个方向教练追问都答得动。这才是 M2a 三条核心技术亮点里"Agent Loop"该有的密度。
 
 ## 什么情况下会推翻这个决策
 
@@ -92,16 +92,16 @@ LangGraph 的图能力 90% 用不上，用了反而把简单的 if/else 藏进 G
 
 **三条 ADR 的共同精神**（ADR-001 / 002 / 004 / 006）：**任何足够小且底层暴露的层，都自己写；任何足够大且业务无关的层（如 Piston 代码执行、Supabase 存储），才用现成的**。
 
-## 面试问答备忘
+## 问答备忘
 
 **Q：LangGraph 现在这么流行，你为什么不用？**
 A：一句话——**图能力对我用不上**。FEDrill 的 Round 0–4 是纯线性推进，判断跳转就一个 `if allPassed`，用 LangGraph 反而把简单 if 藏进节点抽象里。另外 LangChain 抽象泄漏严重，API 一年三改，学到的东西留存率低。手写的 ReAct 循环协议五年不变，学习 ROI 更高。
 
 **Q：那多 Agent 协作场景 LangGraph 是不是就有优势？**
-A：**是**。如果 FEDrill 之后要做"Agent 出题官 + Agent 面试官 + Agent 判官"多角色协作，我会重新评估这份 ADR。但当前 M2 只有一个 agent 一个 tool，LangGraph 是杀鸡用牛刀。
+A：**是**。如果 FEDrill 之后要做"Agent 出题官 + Agent 教练 + Agent 判官"多角色协作，我会重新评估这份 ADR。但当前 M2 只有一个 agent 一个 tool，LangGraph 是杀鸡用牛刀。
 
 **Q：LangSmith 的 trace 观测你怎么办？**
-A：**M2b 自建 minimal trace UI**——每步 timestamp / tokens / tool_result 展开卡片。虽然功能没 LangSmith 全，但**代码是我的，任何一层都能讲**，比调 LangSmith API 更有面试深度。
+A：**M2b 自建 minimal trace UI**——每步 timestamp / tokens / tool_result 展开卡片。虽然功能没 LangSmith 全，但**代码是我的，任何一层都能讲**，比调 LangSmith API 更有技术深度。
 
 **Q：LangChain 生态那些 pre-built tool（Wikipedia / Search / SQL）不心动吗？**
 A：**不匹配需求**。FEDrill 的 tool 是 `run_tests / check_edge_case / analyze_complexity` 这类**极项目相关**的工具，社区没有现成，全都得自己写。所以 LangChain 的 tool 生态对我零价值。

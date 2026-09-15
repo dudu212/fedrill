@@ -263,7 +263,7 @@ BYOK:每个用户用自己的第三方 API 凭据,**没有集中管理需求**,�
 | `X-Frame-Options: DENY` | 老式的防 iframe(现在 CSP frame-ancestors 更强大,可以只用 CSP 那条) |
 | `Permissions-Policy` | 控制页面能用哪些浏览器 API(camera / mic / geolocation) |
 
-## 面试问答备忘
+## 问答备忘
 
 **Q: 你的 BYOK 为什么选浏览器直连不选服务端代理?**
 

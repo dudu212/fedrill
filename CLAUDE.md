@@ -6,9 +6,9 @@
 
 ## 项目定位
 
-FEDrill —— 面向前端秋招的 AI 教练平台（手撕题 / 算法 / 八股）。**同时也是作者的学习项目**：许多技术决策刻意拒绝"一把梭"抽象（Vercel AI SDK、LangChain 等），转而手写可以在面试里讲清楚的实现。接到新需求时请保留这个意图，不要顺手把已经被明确移除的抽象加回来（参见 `docs/decisions/001-choose-ai-sdk.md`）。
+FEDrill —— 面向**前端训练**的 AI 教练平台（手撕题 / 算法 / 八股）。许多技术决策刻意拒绝"一把梭"抽象（Vercel AI SDK、LangChain 等），转而手写实现、保持对底层细节的掌控。接到新需求时请保留这个意图，不要顺手把已经被明确移除的抽象加回来（参见 `docs/decisions/001-choose-ai-sdk.md`）。
 
-里程碑见 `README.md`：M1 骨架 → M2 完整 Agent Loop → M3 算法可视化 → M4 Supabase + SRS → M5 MCP + 上线。**当前处于 M1**。
+里程碑见 `README.md`：M1 骨架 → M2 完整 Agent Loop → M3 算法可视化 → M4 PostgreSQL 会话持久化 → M5 MCP + 上线。八股题 + SM-2 间隔重复（SRS）推迟到 M5 之后。**当前处于 M5 改造阶段**。
 
 ## 常用命令
 
@@ -33,7 +33,7 @@ pnpm lint       # eslint.config.mjs（flat config），继承 next/core-web-vita
 
 - **`app/`** —— Next.js App Router，仅承载 UI。使用 `LayoutProps<"/">`（Next 16 的类型化 layout，与你训练数据里的写法不同）。路径别名 `@/*` 指向仓库根。
 - **`lib/`** —— 业务逻辑，**不能引入 React**。目标是可独立单元测试。按关注点分子目录（`sandbox/`，规划中的 `agent/`、`repo/`、`llm/`、`problems/`）。
-- **`lib/repo/`**（规划中）—— Repository Pattern 数据层。M1–M3 使用 `localStorage`，M4 换成 Supabase，接口保持不变。不要把存储调用直接内联到组件里。
+- **`lib/repo/`** —— Repository Pattern 数据层。M1–M3 使用 `localStorage`，M4 起换成 PostgreSQL（`postgres.ts` 直连 + `HttpSessionRepo` 走 `/api/session/[problemId]`），接口保持不变。不要把存储调用直接内联到组件里。
 
 ### 流式对话（`app/api/chat/route.ts` + `app/chat-demo/page.tsx`）
 
@@ -54,15 +54,15 @@ pnpm lint       # eslint.config.mjs（flat config），继承 next/core-web-vita
 
 ## 约定
 
-- **引入非平凡依赖或做栈级选型时，请在 `docs/decisions/` 补一份 ADR**（模板见 `docs/decisions/README.md`）。这些"面子级"决策的意义就是能在面试里讲清楚，跳过 ADR 就丢掉了这层价值。
+- **引入非平凡依赖或做栈级选型时，请在 `docs/decisions/` 补一份 ADR**（模板见 `docs/decisions/README.md`）。这些"面子级"决策的意义就是能讲清楚，跳过 ADR 就丢掉了这层价值。
 - 当架构真的变了，同步更新 `docs/技术方案.md`。这里是蓝图，过时的段落比缺失更糟。
 - 文档、代码注释、UI 文案默认使用中文（简体）；引用技术名词（Next.js、Server Actions、SSE 等）保持英文原词，不做生硬翻译。已有代码里的英文标识符不必强制翻译。
 - App Router 默认使用 Server Component；只有确实需要交互的文件才加 `'use client'`（目前 `app/chat-demo/page.tsx` 和 `app/practice/page.tsx` 是仅有的 client component）。
 - 所有git提交中都不要加Co-Authored-By: Claude
-- 任何文档中不要出现“秋招”“面试”等专业术语，如有知识点介绍、项目介绍等，都直接写知识点/介绍等即可。
+- 文档默认使用中性、面向技术的表述：写知识点、介绍、实现细节本身即可。
 - 所有 commit 只保留 subject 一行,不再堆 Sanity/根因/修法。
 
-## 学习项目心态
+## 工作方式
 
 每个动作进行前要先解释该动作是什么作用，有什么价值，在链路中处于什么位置，为之后的什么动作做铺垫，会造成什么样的影响，让用户深度理解每个步骤以及整个项目。每轮对话时先告诉用户现在处于项目进程中的哪一步。
 `docs/learning/` 和 `docs/decisions/` 用来沉淀"为什么这么做"。如果一个任务教会了值得记住的知识（SSE 机制、Agent Loop 内部、RAG 评测等），在对应子目录里写一段短笔记，比造一个把机制藏起来的漂亮抽象更有价值。拿不准时，倾向于选**朴素、可读**的实现。

@@ -134,3 +134,9 @@
 - [ ] 认证实现选型：手写 OAuth vs NextAuth（Next 16 兼容性待验证）；
 - [ ] 题库 fallback 策略：DB 空时回退静态 TS 是否保留；
 - [ ] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限（待 owner 加协作者或走 fork + PR）。
+
+## 九、范围调整（2026-09-15）
+
+- 「八股题 + SM-2 间隔重复（SRS）」从原 M4 推迟到 **M5 之后**（M4 实际交付为 PostgreSQL 会话持久化）。
+- 决策留痕见 [ADR-013](decisions/013-postgres-over-supabase.md)。
+- 影响：`srs_cards` 表已建未接线，维持现状；SRS 设计（SM-2 算法 + 八股题深挖）在 M5 三任务完成后单独立项。

@@ -17,8 +17,8 @@ M2a 要落 [F-106 Agent Loop](../需求方案.md)：Agent 自主决定何时调 
 
 | 方案 | 优点 | 缺点 |
 | --- | --- | --- |
-| **A · 手写 Agent Loop**（本 ADR 选） | 全链路 100–200 行可读；ReAct + tool_use / tool_result / max_iterations 都是自己拼；面试可讲的深度直达底层；不引入运行时依赖 | 需要自己处理并发 tool、错误 shape、tool_call streaming 帧拼装；provider 切换要自己维护 adapter |
-| **B · 用 AI SDK 的 `generateText/streamText + tools`** | `maxSteps`/`stopWhen`/`prepareStep` 都有；provider adapter 现成；类型完整 | 循环体被 SDK 隐藏 → L2 学习目标（"看清 Agent Loop 内部"）落空；调试要读 `node_modules/ai/dist/`；SDK 抽象泄漏（DataStream 协议）；面试问"你怎么防无限 loop"回答"SDK 自己处理的"就废了 |
+| **A · 手写 Agent Loop**（本 ADR 选） | 全链路 100–200 行可读；ReAct + tool_use / tool_result / max_iterations 都是自己拼；可讲的深度直达底层；不引入运行时依赖 | 需要自己处理并发 tool、错误 shape、tool_call streaming 帧拼装；provider 切换要自己维护 adapter |
+| **B · 用 AI SDK 的 `generateText/streamText + tools`** | `maxSteps`/`stopWhen`/`prepareStep` 都有；provider adapter 现成；类型完整 | 循环体被 SDK 隐藏 → L2 学习目标（"看清 Agent Loop 内部"）落空；调试要读 `node_modules/ai/dist/`；SDK 抽象泄漏（DataStream 协议）；被问"你怎么防无限 loop"回答"SDK 自己处理的"就废了 |
 | **C · 混合 · 用 SDK 的 tool 定义 + 手写 loop** | 保留手写学习价值，蹭 `tool()` helper 的类型推导 | 类型收益极低（tool 就 1 个）；反而多一个耦合点 |
 
 ## 决定
@@ -37,17 +37,17 @@ M2a 要落 [F-106 Agent Loop](../需求方案.md)：Agent 自主决定何时调 
 
 ### 2. 保持与 ADR-001 的对称
 
-M1 手写 SSE 换来了"我能讲清 SSE 帧协议"的面试话头。M2 用 SDK 就等于承认"chat 层能讲、agent 层不能讲"——**技术叙事断层**。要么两层都手写要么两层都用 SDK。既然 ADR-001 已经定手写，ADR-002 保持一致。
+M1 手写 SSE 换来了"我能讲清 SSE 帧协议"的话题。M2 用 SDK 就等于承认"chat 层能讲、agent 层不能讲"——**技术叙事断层**。要么两层都手写要么两层都用 SDK。既然 ADR-001 已经定手写，ADR-002 保持一致。
 
-### 3. 简历三条硬亮点里 Agent Loop 排第一
+### 3. 三条核心技术亮点里 Agent Loop 排第一
 
-参考 [roadmap-m2.md §9](../roadmap-m2.md)，M2a 锁定后简历三条硬亮点是：
+参考 [roadmap-m2.md §9](../roadmap-m2.md)，M2a 锁定后三条核心技术亮点是：
 
 1. **手写 Agent Loop + tool 集成 + 阶梯追问**
 2. Web Worker 代码沙盒 + `{__fn}/{__val}` escape hatch
 3. 手写 LLM Harness（SSE + AbortController）
 
-第一条如果内容是"用 AI SDK 的 `stopWhen` 起了个 agent"，深度直接砍半。**这是简历叙事最贵的地方，不能省这一步的手写投入**。
+第一条如果内容是"用 AI SDK 的 `stopWhen` 起了个 agent"，深度直接砍半。**这是技术叙事最贵的地方，不能省这一步的手写投入**。
 
 ### 4. tool_use 协议本身就一百来行
 
@@ -108,7 +108,7 @@ lib/llm/
 
 **补偿**：
 
-- 每写一段核心逻辑就在 [docs/learning/](../learning/) 里写一段配套笔记，把"代价"转成"简历弹药"
+- 每写一段核心逻辑就在 [docs/learning/](../learning/) 里写一段配套笔记，把"代价"转成"讲解素材"
 - Provider adapter 的接口即便简单也要立好，M2b 一键切 Claude Haiku 就靠这层
 
 ## 相关决策
@@ -118,16 +118,16 @@ lib/llm/
 - **ADR-004（待写）· Agent Loop 自研而非 LangChain**（本 ADR 覆盖 SDK 层；ADR-004 覆盖 framework 层）
 - **ADR-003（待写）· M1–M3 用 localStorage，M4 才引数据库**（同一"按里程碑演进 minimal"精神）
 
-## 面试问答备忘
+## 问答备忘
 
 **Q：为什么不用 Vercel AI SDK 的 agent 原语，明明能省很多代码？**
-A：AI SDK 5 现在 `maxSteps + stopWhen` 起 agent 确实五行搞定，但那把 Agent Loop 变成黑盒，L2 学习目标（"看清 loop 内部"）落空。项目定位是**学习 + 简历项目**，SDK 起 agent 换来的时间省下来了，可讲的技术深度也一起被省掉了。所以选手写。
+A：AI SDK 5 现在 `maxSteps + stopWhen` 起 agent 确实五行搞定，但那把 Agent Loop 变成黑盒，L2 学习目标（"看清 loop 内部"）落空。项目定位是**学习 + 个人项目**，SDK 起 agent 换来的时间省下来了，可讲的技术深度也一起被省掉了。所以选手写。
 
 **Q：手写 loop 相比 SDK 有什么实际优势？**
 A：**可控性**。tool 的执行策略（串/并/串行超时）、messages 拼接（Anthropic vs OpenAI 微差）、AbortController 传递、错误 shape 兜底——都可以按项目需求捏。SDK 抽象再好，往下追一层还是这些东西。手写等于我把"往下追一层"这段路走了一遍。
 
 **Q：那 tool_call streaming 怎么处理？**
-A：DeepSeek/OpenAI 的 tool_call 会分成多个 delta chunk（`function.name` 一段、`function.arguments` 分段）。手写 loop 里维护一个 `pendingToolCalls: Map<index, PartialCall>`，按 index 拼装，遇到下一条 assistant message 边界或 finish_reason='tool_calls' 就 close 出完整 call。这段是 [AI SDK 的 `parseToolCall` 内部实现的部分](https://github.com/vercel/ai/blob/main/packages/ai/core/generate-text/parse-tool-call.ts)，能自己讲清 = 面试 +1。
+A：DeepSeek/OpenAI 的 tool_call 会分成多个 delta chunk（`function.name` 一段、`function.arguments` 分段）。手写 loop 里维护一个 `pendingToolCalls: Map<index, PartialCall>`，按 index 拼装，遇到下一条 assistant message 边界或 finish_reason='tool_calls' 就 close 出完整 call。这段是 [AI SDK 的 `parseToolCall` 内部实现的部分](https://github.com/vercel/ai/blob/main/packages/ai/core/generate-text/parse-tool-call.ts)，能自己讲清 = 技术 +1。
 
 **Q：max_iterations 你怎么定的？**
 A：10。参考 Anthropic Claude Code 的经验值 + 我自己的场景（一道手撕题的 Round 0→1 追问一般 3–5 轮 tool_call 就到位）。超过 10 大概率是 LLM 陷入循环或幻觉，直接 throw 让上层决定 retry 或告用户。

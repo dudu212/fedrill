@@ -53,11 +53,11 @@ M1 的 [Web Worker 沙箱](../../lib/sandbox/) 已经把 3s 超时 / `{__fn}/{__
 - 调 `deepseekStream()`
 - 逐 chunk 转 SSE 出流
 
-**服务端不管 loop 状态、不管 tool 执行、不管 session** —— 是**无状态的纯 LLM 代理**。简单 = 好维护 = 好在面试里讲清 = 好水平扩展（后期真上线上部署时零 sticky session 需求）。
+**服务端不管 loop 状态、不管 tool 执行、不管 session** —— 是**无状态的纯 LLM 代理**。简单 = 好维护 = 好讲清 = 好水平扩展（后期真上线上部署时零 sticky session 需求）。
 
-### 4. 面试可讲的架构叙事
+### 4. 可讲的架构叙事
 
-面试官视角一句话总结：
+教练视角一句话总结：
 
 > "Agent Loop 在客户端跑，服务端只做 LLM 代理，Tool 直接在浏览器执行。客户端一个 AbortController 就能干净断掉整条链路。服务端零状态、可无限水平扩。"
 
@@ -119,9 +119,9 @@ M1 的 [Web Worker 沙箱](../../lib/sandbox/) 已经把 3s 超时 / `{__fn}/{__
 
 - [Provider 层](../../lib/llm/types.ts) 已抽象，loop 只依赖 `deepseekStream` 契约，换 Claude Haiku 4.5 只改一行 import
 - SessionRepo 天然持久化整个 messages 数组，断线重连即可
-- AbortController 端到端断链本身就是简历亮点
+- AbortController 端到端断链本身就是技术亮点
 
-## 面试问答备忘
+## 问答备忘
 
 **Q：服务端 Agent Loop 是主流吧？你为什么反其道行之？**
 A：主流是因为大多数 tool（数据库查询 / API 调用 / vector search）天然在服务端。**FEDrill 的关键 tool 是"跑用户代码"，天然在浏览器**。硬把它拉到服务端要另起沙箱，违反 ADR-006 "不重造轮子" 精神。我根据实际 tool 位置反过来选客户端 loop，让服务端保持无状态最薄。
