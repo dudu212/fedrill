@@ -1,6 +1,6 @@
 # OAuth 授权码机制与安全隔离（FEDrill 实现）
 
-> 学习笔记 · 复习/面试话术底稿 · 代码指向以 `feat/auth`（M5 Phase 3）为准
+> 学习笔记 · 复习/知识点底稿 · 代码指向以 `feat/auth`（M5 Phase 3）为准
 > 关联决策：M5 Phase 3 选用**手写轻量 OAuth**（零新依赖，避开 NextAuth 对 Next 16 的兼容性风险）
 
 ## 一句话定位
@@ -101,7 +101,7 @@
 
 ---
 
-## 五、复习速查（面试 Q&A）
+## 五、复习速查（问答）
 
 - **Q：为什么不用 JWT / 直接用 GitHub token 当会话？** A：GitHub token 权限过大且不可由我们控制失效；JWT 无法在服务端主动吊销。课设用 HMAC cookie + `users` 表，登录态可随时删除（`logout`），简单可控（`lib/auth/session.ts:9-10` 有说明）。
 - **Q：换证请求为什么在服务器做？** A：换 token 需要 `client_secret`，它只属于服务器；在浏览器换 = 把 secret 暴露给所有人。
