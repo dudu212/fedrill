@@ -9,6 +9,9 @@
  * 环境变量：
  *  - GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET：GitHub OAuth App 凭据
  *  - APP_BASE_URL：回调基址（本地开发 http://localhost:3000）
+ *  - http_proxy / https_proxy + NODE_OPTIONS=--use-env-proxy：可选。
+ *    网络受限环境（如 WSL 需代理出网）下设置，Node 22 的 fetch 会自动经代理
+ *    访问 GitHub；不设置则直连（生产环境默认，无需额外配置）。
  */
 
 export interface GitHubUser {
