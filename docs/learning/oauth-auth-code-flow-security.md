@@ -74,6 +74,11 @@
 - 有合法登录 cookie → 真实 userId；否则走匿名 `x-fedrill-user-key`（`getOrCreateUser` 幂等）。
 - 落点：`lib/auth/resolve.ts:33-56`（`resolveUserId`）。
 
+### 11. 账号选择隔离（prompt=select_account，防串号）
+- 问题：GitHub 授权记录持久——登出 FEDrill 后再登录，GitHub 自动授权原账号，无法切到其他账号。
+- 设计：授权 URL 加 `prompt=select_account`，GitHub 每次登录都显示账号选择页（当前账号 / 用其他账号）。
+- 落点：`lib/auth/github.ts:44`（`buildAuthorizeUrl` 的 params 增加 `prompt: 'select_account'`）。
+
 ### 10. 匿名数据合并的事务隔离
 - 登录成功后匿名会话/画像迁移到真实账号：sessions 冲突保留真实、画像缺失才改挂、删除匿名 users 行——**全部在一个事务里**，失败回滚。
 - 落点：`lib/auth/merge.ts:14-70`（`mergeAnonymousData`，BEGIN `:24` / COMMIT `:62` / ROLLBACK `:65`）；触发点 `app/api/auth/callback/route.ts:37-47`。
@@ -84,7 +89,7 @@
 
 | 文件 | 职责 | 关键位置 |
 |---|---|---|
-| `lib/auth/github.ts` | 构造授权 URL、code 换 token、拉用户 | `buildAuthorizeUrl` L38-46；`exchangeCodeForUser` L48-101 |
+| `lib/auth/github.ts` | 构造授权 URL（含 prompt=select_account）、code 换 token、拉用户 | `buildAuthorizeUrl` L41-49；`exchangeCodeForUser` L51-104 |
 | `lib/auth/session.ts` | HMAC 登录态 token、state 工具 | `signToken` L24-30；`verifyToken` L32-46；`authSecret` L16-22 |
 | `lib/auth/resolve.ts` | 统一鉴权解析（cookie 优先/匿名兜底） | `resolveUserId` L33-56 |
 | `lib/auth/merge.ts` | 匿名数据事务合并 | `mergeAnonymousData` L14-70 |

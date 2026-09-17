@@ -40,6 +40,8 @@ export function buildAuthorizeUrl(state: string): string {
     redirect_uri: `${appBaseUrl()}/api/auth/callback`,
     scope: 'read:user user:email',
     state,
+    // 强制 GitHub 显示账号选择页：即使浏览器已登录并授权过某账号，也能切换/添加其他账号
+    prompt: 'select_account',
   })
   return `${GITHUB_AUTHORIZE_URL}?${params.toString()}`
 }
