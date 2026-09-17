@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PostgresSessionRepo } from '@/lib/repo/postgres'
-import { getOrCreateUser } from '@/lib/repo/user'
+import { resolveUserId } from '@/lib/auth/resolve'
 import { ensureProblemRegistered } from '@/lib/repo/seed-problem'
+import { refreshUserProfile } from '@/lib/profile/aggregate'
 import type { SessionPatch } from '@/lib/repo/session-repo'
 
 /**
@@ -15,18 +16,6 @@ import type { SessionPatch } from '@/lib/repo/session-repo'
  */
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const USER_KEY_HEADER = 'x-fedrill-user-key'
-
-async function resolveUserId(req: NextRequest): Promise<string | null> {
-  const userKey = req.headers.get(USER_KEY_HEADER)
-  if (!userKey) return null
-  try {
-    return await getOrCreateUser(userKey)
-  } catch {
-    return null
-  }
-}
 
 interface Ctx {
   params: Promise<{ problemId: string }>
@@ -64,6 +53,20 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const repo = new PostgresSessionRepo(userId)
   await ensureProblemRegistered(problemId)
   await repo.save(problemId, patch)
+
+  // M5 Phase 2：通关（round 到达 4）时刷新用户画像（total_completed / skill_matrix / streak）
+  if (
+    patch.currentRound !== undefined &&
+    (patch.currentRound === 'completed' || patch.currentRound === 4)
+  ) {
+    await refreshUserProfile(userId).catch((e) =>
+      console.error(
+        `[profile] 通关刷新失败 user=${userId} problem=${problemId}:`,
+        e,
+      ),
+    )
+  }
+
   const session = await repo.get(problemId)
   return NextResponse.json({ ok: true, session })
 }

@@ -13,7 +13,7 @@ import type {
  */
 const USER_KEY_STORAGE = 'fedrill:user:v1'
 
-function getUserKey(): string {
+export function getUserKey(): string {
   if (typeof window === 'undefined') return ''
   let key = window.localStorage.getItem(USER_KEY_STORAGE)
   if (!key) {
