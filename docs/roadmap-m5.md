@@ -1,8 +1,8 @@
 # FEDrill · M5 改造计划：用户登录 · 用户画像 · 题库迁移 PostgreSQL
 
-> 版本 v1.2 · 2026-09-14
+> 版本 v1.3 · 2026-09-15
 >
-> 前置：M4「PostgreSQL 会话持久化接入」已完成并合入 main（commit a946333）；M5 Phase 1「题库迁移 PostgreSQL」已提 PR #3（commit 965d5e5）
+> 前置：M4 已合入（a946333）；Phase 1 已提 PR #3（965d5e5）；Phase 2 已提 PR #4（6111e73，分支 feat/profile）
 >
 > 单一事实源：本文档为 M5 期改造计划的权威。改动优先动这里，其他文档只挂锚点。
 
@@ -11,8 +11,8 @@
 | Phase | 内容 | 状态 | 备注 |
 |---|---|---|---|
 | Phase 1 | **任务 A：题库迁移 PostgreSQL** | ✅ 已完成（v1.1） | 15 道题全量入库，列表/详情改从 DB 读取，API fallback 保留；PR #3 已提交 |
-| Phase 2 | 任务 C：用户画像 | ✅ 已完成（v1.2） | 匿名用户画像落库 + 通关触发刷新 + /profile 展示页；PR 待提交 |
-| Phase 3 | 任务 B：用户登录 | ⬜ 未开始 | 依赖 Phase 2 后推进 |
+| Phase 2 | 任务 C：用户画像 | ✅ 已完成（v1.2） | 匿名用户画像落库 + 通关触发刷新 + /profile 展示页；PR #4 已提交 |
+| Phase 3 | 任务 B：用户登录 | 🔶 骨架完成（v1.3） | OAuth 路由 + HMAC 登录态 + 匿名数据合并已实现；待注册 OAuth App 后联调 |
 
 ## 一、背景与目标
 
@@ -72,32 +72,38 @@
 - [x] `tsc --noEmit` 零错误；`vitest` 74/74 通过
 - [x] 浏览器端到端：题库列表页（15 道卡片 + 分类计数）、题目详情页（async-series 完整渲染）均从 API/DB 正常加载
 
-## 四、任务 B：用户登录（GitHub OAuth）（⬜ 未开始）
+## 四、任务 B：用户登录（GitHub OAuth）（🔶 骨架完成 v1.3）
 
 **目标**：GitHub OAuth 登录 → `users.github_id` 绑定 → 匿名数据迁移合并 → 多设备同步。
 
-### B.1 认证方案
+### B.1 认证方案（已定：手写轻量 OAuth，零新依赖）
 
-- **建议**：轻量手写 OAuth 流程（两个 API 端点）或 NextAuth（Auth.js）。需验证 Next 16 兼容性后定。
-- 端点设计（手写方案）：
-  - `GET /api/auth/github`：302 跳转 GitHub authorize（state 绑定匿名 user_key）
-  - `GET /api/auth/callback`：code 换 token → 获取 GitHub 用户信息 → users upsert（github_id 唯一）
-- `users` 表：给 `github_id` 补 UNIQUE 索引。
+- `users.github_id` UNIQUE 索引：**已有**（建表时预留），无需改 schema。
+- 端点（已实现）：
+  - `GET /api/auth/github`：302 → GitHub authorize（scope `read:user user:email`，state 写 httpOnly cookie 防 CSRF；可选 `?userKey=` 绑定匿名）
+  - `GET /api/auth/callback`：校验 state → code 换 token → 拉取 /user → `upsertGithubUser`（github_id 幂等）→ 匿名数据合并 → 签发登录态 cookie → 302 /profile
+  - `GET /api/auth/me`：返回 `{authed, userId, email}`（前端登录态判断）
+  - `POST /api/auth/logout`：清除登录态 cookie
+- `lib/auth/session.ts`：登录态 token = `userId.hmac(userId)`（HMAC-SHA256，恒定时间比较；secret 用 GITHUB_CLIENT_SECRET/AUTH_SECRET）
+- 登录态 cookie：`fedrill:auth:token`（httpOnly + sameSite=lax）
 
-### B.2 匿名数据合并策略（关键）
+### B.2 匿名数据合并（已实现，lib/auth/merge.ts）
 
-1. 登录前若存在匿名 `user_key` → 解析匿名 user_id；
-2. 登录成功后 upsert 真实用户行 → 把该匿名 user_id 名下的 `sessions`（含 problems/test_results 后续归属）迁移到真实 user_id（`UPDATE ... SET user_id = $real WHERE user_id = $anon`）；
-3. 迁移完成后删除匿名 users 行；
-4. 客户端升级：登录后携带真实身份（token/user_id），`x-fedrill-user-key` 头语义升级为"登录态优先，未登录回退匿名"。
+1. 回调带匿名 user_key（cookie）→ `getOrCreateUser` 解析匿名 user_id；
+2. 事务内：sessions 迁移到真实 user_id（UNIQUE(user_id, problem_id) 冲突时保留真实、丢弃匿名该题）→ user_profiles 真实已有则丢弃匿名、否则改挂 → 删除匿名 users 行（CASCADE 清残留）；
+3. 同 github_id 重复登录（无匿名 cookie）→ 空操作安全返回；
+4. 鉴权升级：`lib/auth/resolve.ts` 统一解析——**登录态 cookie 优先，匿名 user-key 兜底**；session/profile 路由已接入。
 
-### B.3 涉及文件与风险
+### B.3 客户端与配置
 
-- 新增：`app/api/auth/github/route.ts`、`app/api/auth/callback/route.ts`、`lib/auth/*`
-- 风险：
-  - 需注册 GitHub OAuth App（回调 URL 配置）；
-  - NextAuth 与 Next 16 兼容性（若选 NextAuth，先 spike 验证）；
-  - 并发登录/重复登录的幂等处理（同 github_id 再次登录不重复迁移）。
+- `app/_components/auth-status.tsx`：未登录显示「GitHub 登录」（跳 `/api/auth/github?userKey=<匿名 key>`），已登录显示邮箱 + 登出；列表页 header 已接入。
+- `.env.local(.example)`：新增 `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `APP_BASE_URL`；未配置时 `/api/auth/github` 返回 503 友好提示，`/api/auth/me` 与匿名链路不受影响。
+
+### B.4 剩余工作与风险
+
+- [ ] **注册 GitHub OAuth App**（需用户在 GitHub 操作）：Settings → Developer settings → OAuth Apps → New OAuth App；Homepage URL `http://localhost:3000`、Authorization callback URL `http://localhost:3000/api/auth/callback`；把 Client ID/Secret 填入 `.env.local` 后重启 dev server；
+- [ ] 完整登录联调（真实 OAuth 流程端到端：登录 → 数据合并 → 多设备同步验证）；
+- [ ] 安全备注：本地课设级 HMAC cookie（无过期/轮换），生产需换签名会话或正式认证中间件。
 
 ## 五、任务 C：用户画像（✅ 已完成 v1.2）
 
@@ -143,20 +149,20 @@
 |---|---|---|---|
 | **Phase 1** | 任务 A 题库迁移 | ✅ 已完成（2026-09-13） | 数据层地基 |
 | **Phase 2** | 任务 C 用户画像 | ✅ 已完成（2026-09-14） | 次做 |
-| **Phase 3** | 任务 B 用户登录 | ⬜ 待启动 | 后做 |
+| **Phase 3** | 任务 B 用户登录 | 🔶 骨架完成（2026-09-15，待 OAuth App 联调） | 后做 |
 
 每 Phase 交付即验证，改动同步进 `docs/` 与 Windows 端课程设计目录 SQL/文档。
 
 ## 七、验证方案
 
 - **A**（已完成）：迁移脚本幂等（跑两遍 count 仍=15）；题库列表/详情端到端从 API 读取成功；
-- **B**：OAuth 登录 → users 更新；匿名数据合并后 sessions 归属正确；重复登录不重复迁移；
+- **B**（骨架已验证）：`/api/auth/me` 未登录 `{authed:false}`；未配置 OAuth 时 `/api/auth/github` 503 提示；无凭据 /api/profile 401；伪造 cookie 安全降级；匿名链路回归 200；`tsc` 零错误、`vitest` 77/77（含 token 单测 3 例）。完整登录流（真实 OAuth）待 App 注册后联调；
 - **C**（已完成）：通关到 round4 → total_completed+1、skill_matrix 按 category 更新、streak 连续/断更逻辑正确；`/profile` 页展示数据与 DB 一致。
 
 ## 八、风险与开放问题
 
 - [x] `skill_matrix` 口径：**已定**——按 category（默认方案，v1.2 已实现）；tags 维度留作扩展
-- [ ] GitHub OAuth App 注册（需仓库/账号管理员操作，回调 URL）；
-- [ ] 认证实现选型：手写 OAuth vs NextAuth（Next 16 兼容性待验证）；
+- [ ] GitHub OAuth App 注册（需用户在 GitHub 操作，回调 URL `http://localhost:3000/api/auth/callback`）；
+- [x] 认证实现选型：**已定**——手写轻量 OAuth（零新依赖，Next 16 兼容无风险）；
 - [x] ~~题库 fallback 策略~~：**已定**——DB 空/失败时回退静态 TS（API 层实现，页面无感知）；
 - [x] **推送权限**：本机 SSH 账号 `lllxxxxxlll` 对 `dudu212/fedrill` 无 push 权限 → 已改走 **fork + PR 流程**（PR #2 已合并，PR #3 待 owner 合并）。

@@ -49,3 +49,4 @@
 
 ### 横切 · Security
 - [x] [`byok-security-model.md`](byok-security-model.md) —— 零信任 BYOK · CORS 实测 + Client-direct 架构 + XSS 4 层防御 + CSP 落地 · STAR 结构复盘
+- [x] [`oauth-auth-code-flow-security.md`](oauth-auth-code-flow-security.md) —— OAuth 授权码机制与安全隔离 · 密码/code/secret/token 四层隔离 + state 防 CSRF + HMAC 登录态 + 匿名数据合并事务（含代码行号索引）
