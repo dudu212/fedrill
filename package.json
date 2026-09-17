@@ -36,6 +36,7 @@
     "happy-dom": "^20.11.10",
     "promptfoo": "^0.122.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^4.1.11"
   },
