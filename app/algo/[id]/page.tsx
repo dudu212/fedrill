@@ -7,7 +7,7 @@ import { getAlgoProblem } from '@/data/algo'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult } from '@/lib/sandbox/types'
 import { ArrayVisualizer } from '@/app/_components/array-visualizer'
-import { bubbleSortTrace } from '@/lib/visualization/traces/bubble-sort'
+import { getArrayTrace } from '@/lib/visualization/traces'
 import { runAgentLoop } from '@/lib/agent/loop'
 import type { ProviderMessage } from '@/lib/llm/types'
 import { buildSocraticSystemPrompt } from '@/lib/agent/socratic-prompt'
@@ -40,7 +40,7 @@ export default function AlgoDetailPage() {
   const [chatting, setChatting] = useState(false)
   const [streamingText, setStreamingText] = useState('')
 
-  const trace = useMemo(() => bubbleSortTrace(SAMPLE), [])
+  const trace = useMemo(() => getArrayTrace(problem?.id ?? '', SAMPLE), [problem?.id])
 
   useEffect(() => {
     if (problem) setCode(problem.starterCode)
@@ -144,8 +144,12 @@ export default function AlgoDetailPage() {
         {problem.description}
       </pre>
 
-      <h2 className="mt-8 mb-2 text-lg font-semibold">过程可视化（参考轨迹）</h2>
-      <ArrayVisualizer trace={trace} />
+      {trace && (
+        <>
+          <h2 className="mt-8 mb-2 text-lg font-semibold">过程可视化（参考轨迹）</h2>
+          <ArrayVisualizer trace={trace} />
+        </>
+      )}
 
       <h2 className="mt-8 mb-2 text-lg font-semibold">你的实现</h2>
       <textarea
