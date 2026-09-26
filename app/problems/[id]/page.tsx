@@ -21,6 +21,7 @@ import { buildRound1SystemPrompt } from '@/lib/agent/round1-prompt'
 import { runAgentLoop } from '@/lib/agent/loop'
 import type { ProviderMessage } from '@/lib/llm/types'
 import { ApiKeySettings } from '@/app/_components/api-key-settings'
+import { useTheme } from '@/lib/settings/theme'
 import {
   getSessionRepo,
   type SessionMessage,
@@ -47,6 +48,7 @@ export default function ProblemDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
   const repo = useMemo(() => getSessionRepo(), [])
+  const theme = useTheme()
 
   // M5：题库权威源迁移 PostgreSQL —— 题目从 /api/problems/[id] 读取（DB 优先，API 层回退静态 TS）
   const [problem, setProblem] = useState<ImplProblemMinimal | null>(null)
@@ -347,7 +349,7 @@ export default function ProblemDetailPage() {
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-4 p-8">
         <h1 className="text-2xl font-bold">题目加载中…</h1>
-        <Link href="/problems" className="text-blue-500 hover:underline">
+        <Link href="/problems" className="text-accent-bright hover:underline">
           ← 返回题库
         </Link>
       </main>
@@ -358,7 +360,7 @@ export default function ProblemDetailPage() {
     return (
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-4 p-8">
         <h1 className="text-2xl font-bold">题目不存在</h1>
-        <Link href="/problems" className="text-blue-500 hover:underline">
+        <Link href="/problems" className="text-accent-bright hover:underline">
           ← 返回题库
         </Link>
       </main>
@@ -367,28 +369,28 @@ export default function ProblemDetailPage() {
 
   return (
     <main className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
-          <Link href="/problems" className="hover:text-zinc-100">
+      <header className="flex items-center justify-between border-b border-hairline px-6 py-3">
+        <div className="flex items-center gap-2 text-sm text-muted">
+          <Link href="/problems" className="hover:text-fg">
             手撕训练
           </Link>
           <span>/</span>
           <span>{categoryLabels[problem.category]}</span>
           <span>/</span>
-          <span className="text-zinc-100">{problem.title}</span>
+          <span className="text-fg">{problem.title}</span>
         </div>
         <div className="flex items-center gap-3">
           {total > 0 && (
             <div className="flex items-center gap-2 text-sm">
-              <div className="h-2 w-28 overflow-hidden rounded-full bg-zinc-800">
+              <div className="h-2 w-28 overflow-hidden rounded-full bg-raised">
                 <div
                   className={`h-full transition-all ${
-                    allPassed ? 'bg-emerald-500' : 'bg-amber-500'
+                    allPassed ? 'bg-ok' : 'bg-warn'
                   }`}
                   style={{ width: `${(passCount / total) * 100}%` }}
                 />
               </div>
-              <span className="text-zinc-300">
+              <span className="text-muted">
                 {passCount}/{total}
               </span>
             </div>
@@ -396,8 +398,8 @@ export default function ProblemDetailPage() {
           <span
             className={`rounded-full border px-2.5 py-0.5 text-sm ${
               currentRound === 0
-                ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
-                : 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300'
+                ? 'border-accent/50 bg-accent/10 text-accent-bright'
+                : 'border-ok/50 bg-ok/10 text-ok'
             }`}
           >
             Round {currentRound} · {currentRound === 0 ? '基础实现' : '边界追问'}
@@ -414,23 +416,23 @@ export default function ProblemDetailPage() {
           style={{ flex: `0 0 ${leftPct}%` }}
         >
           <div
-            className="min-h-0 overflow-auto border border-zinc-800 bg-zinc-950 p-5"
+            className="min-h-0 overflow-auto border border-hairline bg-surface p-5"
             style={{ flex: `0 0 ${leftTopPct}%` }}
           >
-            <h2 className="mb-3 text-2xl font-semibold text-zinc-50">
+            <h2 className="mb-3 text-2xl font-semibold text-fg">
               {problem.title}
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {problem.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-200"
+                  className="rounded bg-raised px-2 py-0.5 text-xs text-fg"
                 >
                   {t}
                 </span>
               ))}
             </div>
-            <article className="mt-4 whitespace-pre-wrap text-base leading-7 text-zinc-100">
+            <article className="mt-4 whitespace-pre-wrap text-base leading-7 text-fg">
               {problem.description}
             </article>
           </div>
@@ -439,20 +441,20 @@ export default function ProblemDetailPage() {
             containerRef={leftRef}
             setPct={setLeftTopPct}
           />
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-zinc-800 bg-zinc-950">
-            <div className="border-b border-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-hairline bg-surface">
+            <div className="border-b border-hairline px-4 py-2 text-sm font-medium text-muted">
               测试结果
               {total > 0 &&
                 ` · ${passCount}/${total} 通过 · ${testResults?.totalDurationMs.toFixed(0)}ms`}
             </div>
             <div className="min-h-0 flex-1 overflow-auto p-3 text-sm">
               {testError && (
-                <div className="rounded border border-red-500/40 bg-red-500/10 p-2 text-red-300">
+                <div className="rounded border border-bad/40 bg-bad/10 p-2 text-bad">
                   {testError}
                 </div>
               )}
               {!testError && !testResults && (
-                <div className="text-zinc-500">
+                <div className="text-fg0">
                   点"运行"或 Ctrl/Cmd+Enter 开始
                 </div>
               )}
@@ -475,20 +477,20 @@ export default function ProblemDetailPage() {
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <div
-            className="flex flex-col overflow-hidden border border-zinc-800"
+            className="flex flex-col overflow-hidden border border-hairline"
             style={{ flex: `0 0 ${rightTopPct}%` }}
           >
-            <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-3 py-2 text-sm">
-              <span className="text-zinc-400">
+            <div className="flex items-center justify-between border-b border-hairline bg-surface px-3 py-2 text-sm">
+              <span className="text-muted">
                 导出函数：
-                <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-100">
+                <code className="rounded bg-raised px-1.5 py-0.5 text-fg">
                   {problem.requiredAPI}
                 </code>
               </span>
               <button
                 onClick={runTests}
                 disabled={running}
-                className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dim disabled:opacity-50"
               >
                 {running ? '运行中…' : '运行 (Ctrl+Enter)'}
               </button>
@@ -499,14 +501,14 @@ export default function ProblemDetailPage() {
                 language="javascript"
                 value={code}
                 onChange={(v) => setCode(v ?? '')}
-                theme="vs-dark"
+                theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                 loading={
-                  <div className="h-full space-y-2 bg-[#1e1e1e] p-4 font-mono text-sm">
-                    <div className="h-4 w-1/3 animate-pulse rounded bg-zinc-800" />
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-zinc-800" />
-                    <div className="h-4 w-1/2 animate-pulse rounded bg-zinc-800" />
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-zinc-800" />
-                    <div className="mt-4 text-xs text-zinc-600">Monaco 加载中…</div>
+                  <div className="h-full space-y-2 bg-surface p-4 font-mono text-sm">
+                    <div className="h-4 w-1/3 animate-pulse rounded bg-raised" />
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-raised" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-raised" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-raised" />
+                    <div className="mt-4 text-xs text-faint">Monaco 加载中…</div>
                   </div>
                 }
                 onMount={(editor, monaco) => {
@@ -536,13 +538,13 @@ export default function ProblemDetailPage() {
             setPct={setRightTopPct}
           />
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-zinc-800 bg-zinc-950">
-            <div className="border-b border-zinc-800 px-3 py-2 text-sm font-medium text-zinc-300">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-hairline bg-surface">
+            <div className="border-b border-hairline px-3 py-2 text-sm font-medium text-muted">
               Agent 对话 · Round {currentRound}
             </div>
             <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
               {messages.length === 0 && (
-                <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                <div className="flex h-full items-center justify-center text-sm text-fg0">
                   说点什么，比如"我不会写"或"我这样写对吗？"
                 </div>
               )}
@@ -551,11 +553,11 @@ export default function ProblemDetailPage() {
                   key={i}
                   className={`rounded px-3 py-2 text-base ${
                     m.role === 'user'
-                      ? 'bg-blue-600/20 text-zinc-50'
-                      : 'bg-zinc-900 text-zinc-100'
+                      ? 'bg-accent/20 text-fg'
+                      : 'bg-raised text-fg'
                   }`}
                 >
-                  <div className="mb-1 text-xs uppercase opacity-60">
+                  <div className="mb-1 text-xs text-faint">
                     {m.role === 'user' ? 'you' : 'agent'}
                   </div>
                   <div className="whitespace-pre-wrap">
@@ -577,13 +579,13 @@ export default function ProblemDetailPage() {
               ))}
             </div>
             {chatError && (
-              <div className="border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+              <div className="border-t border-bad/40 bg-bad/10 px-3 py-2 text-sm text-bad">
                 {chatError}
               </div>
             )}
             {streaming && agentStatus && (
-              <div className="flex items-center gap-2 border-t border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm text-blue-200">
-                <span className="animate-pulse text-blue-300">▍</span>
+              <div className="flex items-center gap-2 border-t border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent-bright">
+                <span className="animate-pulse text-accent-bright">▍</span>
                 <span>{agentStatus}</span>
               </div>
             )}
@@ -592,7 +594,7 @@ export default function ProblemDetailPage() {
               setHeight={setInputAreaHeight}
             />
             <div
-              className="flex shrink-0 gap-2 border-t border-zinc-800 p-2"
+              className="flex shrink-0 gap-2 border-t border-hairline p-2"
               style={{ height: inputAreaHeight }}
             >
               <textarea
@@ -612,13 +614,13 @@ export default function ProblemDetailPage() {
                 }}
                 placeholder="Enter 发送 · Shift+Enter 换行"
                 disabled={streaming}
-                className="h-full flex-1 resize-none overflow-y-auto rounded border border-zinc-800 bg-zinc-950 px-3 py-2 text-base text-zinc-100 placeholder:text-zinc-500 disabled:opacity-50"
+                className="h-full flex-1 resize-none overflow-y-auto rounded border border-hairline bg-surface px-3 py-2 text-base text-fg placeholder:text-fg0 disabled:opacity-50"
               />
               <div className="flex h-full flex-col gap-1">
                 <button
                   onClick={sendMessage}
                   disabled={streaming || !input.trim()}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dim disabled:opacity-50"
                 >
                   发送
                 </button>
@@ -627,8 +629,8 @@ export default function ProblemDetailPage() {
                   disabled={!streaming}
                   className={`rounded px-3 py-1.5 text-sm font-medium disabled:opacity-40 ${
                     streaming
-                      ? 'animate-pulse bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      ? 'animate-pulse bg-bad text-white hover:bg-bad/90'
+                      : 'bg-raised text-muted hover:bg-hairline-strong'
                   }`}
                 >
                   {streaming ? '⏹ 中断' : '中断'}
@@ -666,7 +668,7 @@ function ResizeHandle({
       role="separator"
       aria-orientation={direction === 'horizontal' ? 'vertical' : 'horizontal'}
       className={`${base} select-none transition-colors ${
-        active ? 'bg-blue-500' : 'bg-zinc-700 hover:bg-blue-500'
+        active ? 'bg-accent' : 'bg-hairline-strong hover:bg-accent'
       }`}
       onPointerDown={(e) => {
         dragging.current = true
@@ -710,7 +712,7 @@ function HeightHandle({
       role="separator"
       aria-orientation="horizontal"
       className={`h-2 shrink-0 cursor-row-resize select-none transition-colors ${
-        active ? 'bg-blue-500' : 'bg-zinc-700 hover:bg-blue-500'
+        active ? 'bg-accent' : 'bg-hairline-strong hover:bg-accent'
       }`}
       onPointerDown={(e) => {
         startY.current = e.clientY
@@ -752,20 +754,20 @@ function ToolCallCard({ call }: { call: UIToolCall }) {
   const isPartial =
     !isPending && !isError && r?.success !== false && r?.allPassed === false
   const containerClass = isPending
-    ? 'border-zinc-700 bg-zinc-900/50'
+    ? 'border-hairline-strong bg-raised/50'
     : isError
-      ? 'border-red-500/40 bg-red-500/5'
+      ? 'border-bad/40 bg-bad/5'
       : isPartial
-        ? 'border-amber-500/50 bg-amber-500/10'
-        : 'border-emerald-500/40 bg-emerald-500/5'
+        ? 'border-warn/50 bg-warn/10'
+        : 'border-ok/40 bg-ok/5'
   const icon = isPending ? '⏳' : isError ? '⛔' : isPartial ? '✗' : '✓'
   const iconColor = isPending
-    ? 'text-zinc-400'
+    ? 'text-muted'
     : isError
-      ? 'text-red-300'
+      ? 'text-bad'
       : isPartial
-        ? 'text-amber-300'
-        : 'text-emerald-300'
+        ? 'text-warn'
+        : 'text-ok'
 
   // 摘要:根据 run_tests 结果 shape 提取通过数
   const summary = (() => {
@@ -788,20 +790,20 @@ function ToolCallCard({ call }: { call: UIToolCall }) {
           <span className={`${iconColor} ${isPending ? 'animate-pulse' : ''}`}>
             {icon}
           </span>
-          <span className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-xs text-zinc-200">
+          <span className="rounded bg-raised px-1.5 py-0.5 font-mono text-xs text-fg">
             {call.name}
           </span>
-          <span className="text-zinc-400">·</span>
-          <span className="text-zinc-200">{summary}</span>
+          <span className="text-muted">·</span>
+          <span className="text-fg">{summary}</span>
         </span>
         {!isPending && (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-fg0">
             {expanded ? '收起' : '展开'}
           </span>
         )}
       </button>
       {expanded && !isPending && (
-        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-zinc-950 p-2 text-xs leading-5 text-zinc-300">
+        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded bg-surface p-2 text-xs leading-5 text-muted">
           {JSON.stringify(
             { args: call.args, result: call.result },
             null,
@@ -819,23 +821,23 @@ function TestResultRow({ result }: { result: TestResult }) {
     <div
       className={`mb-1.5 rounded border p-2 ${
         result.passed
-          ? 'border-emerald-500/30 bg-emerald-500/5'
-          : 'border-red-500/40 bg-red-500/5'
+          ? 'border-ok/30 bg-ok/5'
+          : 'border-bad/40 bg-bad/5'
       }`}
     >
       <button
         className="flex w-full items-center justify-between gap-2 text-left"
         onClick={() => setExpanded((v) => !v)}
       >
-        <span className="font-medium text-zinc-100">
+        <span className="font-medium text-fg">
           {result.passed ? '✓' : '✗'} {result.name ?? '?'}
         </span>
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-fg0">
           {result.durationMs.toFixed(1)}ms
         </span>
       </button>
       {expanded && !result.passed && (
-        <pre className="mt-2 overflow-x-auto text-xs leading-6 text-zinc-300">
+        <pre className="mt-2 overflow-x-auto text-xs leading-6 text-muted">
           {result.error
             ? `Error: ${result.error}`
             : `Input:    ${JSON.stringify(result.input)}\nExpected: ${JSON.stringify(result.expected)}\nActual:   ${JSON.stringify(result.actual)}`}

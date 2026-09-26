@@ -10,9 +10,11 @@ export default function AlgoDemoPage() {
   const trace = useMemo(() => bubbleSortTrace(INITIAL), [])
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="mb-2 text-2xl font-bold">冒泡排序可视化</h1>
-      <p className="mb-6 text-sm text-slate-500">
+    <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-10">
+      <h1 className="mb-2 text-2xl font-semibold tracking-tight">
+        冒泡排序可视化
+      </h1>
+      <p className="mb-6 text-sm text-muted">
         参考轨迹 · 蓝色=普通，黄色=正在比较，红色=刚交换，绿色=已排好。点「播放」看最大值如何逐个「冒」到末尾。
       </p>
       <ArrayVisualizer trace={trace} />

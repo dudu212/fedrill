@@ -59,7 +59,7 @@ export function AuthStatus() {
 
   if (me === null) {
     return (
-      <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-500">
+      <span className="rounded-full border border-hairline px-3 py-1 text-xs text-faint">
         登录态…
       </span>
     )
@@ -68,12 +68,12 @@ export function AuthStatus() {
   if (me.authed) {
     return (
       <div className="flex items-center gap-2">
-        <span className="max-w-[140px] truncate text-xs text-zinc-400">
+        <span className="max-w-[140px] truncate text-xs text-muted">
           {me.email ?? '已登录'}
         </span>
         <button
           onClick={logout}
-          className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-300 transition hover:border-red-500/60 hover:text-red-300"
+          className="rounded-full border border-hairline px-3 py-1 text-xs text-muted transition hover:border-bad/60 hover:text-bad"
         >
           登出
         </button>
@@ -84,7 +84,7 @@ export function AuthStatus() {
   return (
     <a
       href={`/api/auth/github?userKey=${encodeURIComponent(getUserKey())}`}
-      className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-300 transition hover:border-emerald-500/60 hover:text-emerald-300"
+      className="rounded-full border border-hairline px-3 py-1 text-xs text-muted transition hover:border-ok/60 hover:text-ok"
     >
       GitHub 登录
     </a>

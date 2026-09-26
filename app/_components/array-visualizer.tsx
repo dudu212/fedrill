@@ -73,7 +73,7 @@ export function ArrayVisualizer({ trace }: { trace: VizTrace }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <svg width={width} height={height} className="rounded-lg bg-slate-900">
+      <svg width={width} height={height} className="rounded-lg bg-surface">
         {array.map((v, i) => (
           <rect
             key={i}
@@ -94,29 +94,29 @@ export function ArrayVisualizer({ trace }: { trace: VizTrace }) {
             setPlaying(false)
             setStepIndex(-1)
           }}
-          className="rounded-md bg-slate-200 px-3 py-1.5 text-sm hover:bg-slate-300"
+          className="rounded-md border border-hairline bg-raised px-3 py-1.5 text-sm text-muted transition-colors hover:border-hairline-strong hover:text-fg"
         >
           重置
         </button>
         <button
           onClick={() => step(-1)}
-          className="rounded-md bg-slate-200 px-3 py-1.5 text-sm hover:bg-slate-300"
+          className="rounded-md border border-hairline bg-raised px-3 py-1.5 text-sm text-muted transition-colors hover:border-hairline-strong hover:text-fg"
         >
           上一步
         </button>
         <button
           onClick={togglePlay}
-          className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-dim"
         >
           {playing ? '暂停' : '播放'}
         </button>
         <button
           onClick={() => step(1)}
-          className="rounded-md bg-slate-200 px-3 py-1.5 text-sm hover:bg-slate-300"
+          className="rounded-md border border-hairline bg-raised px-3 py-1.5 text-sm text-muted transition-colors hover:border-hairline-strong hover:text-fg"
         >
           下一步
         </button>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-muted">
           步骤 {stepIndex + 1} / {totalSteps}
         </span>
       </div>

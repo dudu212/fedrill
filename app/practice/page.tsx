@@ -5,6 +5,7 @@ import Editor from '@monaco-editor/react'
 import '@/lib/monaco/init'
 import { runInSandbox } from '@/lib/sandbox/runner'
 import type { SandboxRunResult } from '@/lib/sandbox/types'
+import { useTheme } from '@/lib/settings/theme'
 
 const INITIAL_CODE = `function myDeepClone(obj) {
   if (obj === null || typeof obj !== 'object') return obj
@@ -35,6 +36,7 @@ const CASES = [
 ]
 
 export default function PracticePage() {
+  const theme = useTheme()
   const [code, setCode] = useState(INITIAL_CODE)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<SandboxRunResult | null>(null)
@@ -60,28 +62,30 @@ export default function PracticePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
       <header>
-        <h1 className="text-2xl font-bold">Sandbox Walking Skeleton</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Sandbox Walking Skeleton
+        </h1>
+        <p className="text-sm text-muted">
           题目：手写 deepClone · Monaco 编辑器 + Worker 沙盒 + 3 个测试用例
         </p>
       </header>
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-zinc-400">
+        <h2 className="mb-2 text-sm font-medium text-muted">
           用户代码（可编辑）· 约定导出函数名{' '}
-          <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">
+          <code className="rounded bg-raised px-1 py-0.5 text-xs">
             myDeepClone
           </code>
         </h2>
-        <div className="overflow-hidden rounded border border-zinc-800">
+        <div className="overflow-hidden rounded-md border border-hairline">
           <Editor
             height="320px"
             language="javascript"
             value={code}
             onChange={(v: string | undefined) => setCode(v ?? '')}
-            theme="vs-dark"
+            theme={theme === 'dark' ? 'vs-dark' : 'vs'}
             loading={
-              <div className="flex h-[320px] items-center justify-center text-xs text-zinc-500">
+              <div className="flex h-[320px] items-center justify-center text-xs text-faint">
                 Monaco 加载中…
               </div>
             }
@@ -101,13 +105,13 @@ export default function PracticePage() {
       <button
         onClick={handleRun}
         disabled={running}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-dim disabled:opacity-50"
       >
         {running ? '运行中…' : '在 Worker 里跑'}
       </button>
 
       {error && (
-        <div className="rounded border border-red-500 bg-red-500/10 p-4 text-sm text-red-400">
+        <div className="rounded-md border border-bad bg-bad/10 p-4 text-sm text-bad">
           <strong>失败：</strong>
           {error}
         </div>
@@ -115,7 +119,7 @@ export default function PracticePage() {
 
       {result && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-zinc-400">
+          <h2 className="mb-2 text-sm font-medium text-muted">
             结果 · {passCount}/{total} 通过 · 总耗时{' '}
             {result.totalDurationMs.toFixed(2)}ms
           </h2>
@@ -123,22 +127,22 @@ export default function PracticePage() {
             {result.results.map((r, i) => (
               <li
                 key={i}
-                className={`rounded border p-3 text-sm ${
+                className={`rounded-md border p-3 text-sm ${
                   r.passed
-                    ? 'border-green-500/50 bg-green-500/5'
-                    : 'border-red-500/50 bg-red-500/5'
+                    ? 'border-ok/40 bg-ok/5'
+                    : 'border-bad/40 bg-bad/5'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">
                     {r.passed ? '✓' : '✗'} {r.name ?? `case ${i}`}
                   </span>
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-faint">
                     {r.durationMs.toFixed(2)}ms
                   </span>
                 </div>
                 {!r.passed && (
-                  <pre className="mt-2 overflow-x-auto text-xs text-zinc-400">
+                  <pre className="mt-2 overflow-x-auto text-xs text-muted">
                     {r.error
                       ? `error: ${r.error}`
                       : `expected: ${JSON.stringify(r.expected)}\nactual:   ${JSON.stringify(r.actual)}`}

@@ -78,12 +78,12 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-2">
           <Link
             href="/problems"
-            className="text-xs text-zinc-500 hover:text-zinc-300"
+            className="text-xs text-faint hover:text-muted"
           >
             ← 返回题库
           </Link>
-          <h1 className="text-3xl font-bold">我的画像</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold tracking-tight">我的画像</h1>
+          <p className="text-sm text-muted">
             技能掌握度 · 连续打卡 · 完成题数（数据存于 PostgreSQL）
           </p>
         </div>
@@ -91,13 +91,13 @@ export default function ProfilePage() {
       </header>
 
       {loadError && (
-        <div className="rounded border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-md border border-bad/40 bg-bad/10 p-4 text-sm text-bad">
           画像加载失败：{loadError}（请确认 dev server 与 PostgreSQL 可用）
         </div>
       )}
 
       {!profile && !loadError && (
-        <div className="rounded border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
+        <div className="rounded-md border border-dashed border-hairline p-8 text-center text-sm text-faint">
           画像加载中…
         </div>
       )}
@@ -124,8 +124,8 @@ export default function ProfilePage() {
           </section>
 
           {/* 技能矩阵 */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-950 p-5">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-50">
+          <section className="rounded-md border border-hairline bg-surface p-5">
+            <h2 className="mb-4 text-base font-medium text-fg">
               技能矩阵（按类别掌握度）
             </h2>
             <div className="space-y-3">
@@ -134,19 +134,19 @@ export default function ProfilePage() {
                 return (
                   <div key={cat}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-zinc-300">
+                      <span className="text-muted">
                         {categoryLabels[cat] ?? cat}
                       </span>
-                      <span className="font-mono text-zinc-400">{value}%</span>
+                      <span className="font-mono text-muted">{value}%</span>
                     </div>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-zinc-800">
+                    <div className="h-2.5 overflow-hidden rounded-full bg-raised">
                       <div
                         className={`h-full rounded-full transition-all ${
                           value >= 100
-                            ? 'bg-emerald-500'
+                            ? 'bg-ok'
                             : value > 0
-                              ? 'bg-blue-500'
-                              : 'bg-zinc-700'
+                              ? 'bg-accent'
+                              : 'bg-hairline'
                         }`}
                         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
                       />
@@ -158,20 +158,23 @@ export default function ProfilePage() {
           </section>
 
           {/* 最近做题记录 */}
-          <section className="rounded-lg border border-zinc-800 bg-zinc-950 p-5">
-            <h2 className="mb-4 text-lg font-semibold text-zinc-50">
+          <section className="rounded-md border border-hairline bg-surface p-5">
+            <h2 className="mb-4 text-base font-medium text-fg">
               最近训练记录
             </h2>
             {profile.recentSessions.length === 0 ? (
-              <div className="text-sm text-zinc-500">
+              <div className="text-sm text-muted">
                 还没有训练记录——去{' '}
-                <Link href="/problems" className="text-blue-500 hover:underline">
+                <Link
+                  href="/problems"
+                  className="text-accent-bright hover:underline"
+                >
                   题库
                 </Link>{' '}
                 做一道题吧
               </div>
             ) : (
-              <ul className="divide-y divide-zinc-800">
+              <ul className="divide-y divide-hairline">
                 {profile.recentSessions.map((s) => (
                   <li
                     key={`${s.problemId}-${s.updatedAt}`}
@@ -179,21 +182,21 @@ export default function ProfilePage() {
                   >
                     <Link
                       href={`/problems/${s.problemId}`}
-                      className="text-sm text-zinc-200 hover:text-blue-400"
+                      className="text-sm text-fg hover:text-accent-bright"
                     >
                       {s.title ?? s.problemId}
                     </Link>
                     <div className="flex shrink-0 items-center gap-2">
                       {s.category && (
-                        <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                        <span className="rounded bg-raised px-1.5 py-0.5 text-[10px] text-muted">
                           {categoryLabels[s.category] ?? s.category}
                         </span>
                       )}
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] ${
                           s.round === 4
-                            ? 'bg-emerald-500/15 text-emerald-300'
-                            : 'bg-zinc-800 text-zinc-400'
+                            ? 'bg-ok/15 text-ok'
+                            : 'bg-raised text-muted'
                         }`}
                       >
                         {ROUND_LABEL[s.round] ?? `Round ${s.round}`}
@@ -220,10 +223,10 @@ function MetricCard({
   hint: string
 }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className="mt-1 text-3xl font-bold text-zinc-50">{value}</div>
-      <div className="mt-1 text-[11px] text-zinc-600">{hint}</div>
+    <div className="rounded-md border border-hairline bg-surface p-4">
+      <div className="text-xs text-faint">{label}</div>
+      <div className="mt-1 text-3xl font-semibold text-fg">{value}</div>
+      <div className="mt-1 text-[11px] text-faint">{hint}</div>
     </div>
   )
 }

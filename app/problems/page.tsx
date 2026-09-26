@@ -34,9 +34,9 @@ function prefetchMonaco(): void {
 }
 
 const difficultyStyle: Record<string, string> = {
-  easy: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10',
-  medium: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
-  hard: 'text-rose-400 border-rose-500/40 bg-rose-500/10',
+  easy: 'text-ok border-ok/40 bg-ok/10',
+  medium: 'text-warn border-warn/40 bg-warn/10',
+  hard: 'text-bad border-bad/40 bg-bad/10',
 }
 
 const difficultyLabel: Record<string, string> = {
@@ -83,19 +83,19 @@ export default function ProblemsListPage() {
         <div className="flex flex-col gap-2">
           <Link
             href="/"
-            className="text-xs text-zinc-500 hover:text-zinc-300"
+            className="text-xs text-faint hover:text-muted"
           >
             ← 首页
           </Link>
-          <h1 className="text-3xl font-bold">手撕题库</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold tracking-tight">手撕题库</h1>
+          <p className="text-sm text-muted">
             共 {total} 道题 · AI 面试官陪你走 Round 0 → 4
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/profile"
-            className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-300 transition hover:border-blue-500/60 hover:text-blue-300"
+            className="rounded-full border border-hairline px-3 py-1 text-xs text-muted transition hover:border-accent/60 hover:text-accent-bright"
           >
             我的画像
           </Link>
@@ -124,13 +124,13 @@ export default function ProblemsListPage() {
       </nav>
 
       {problems === null && !loadError && (
-        <div className="rounded border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
+        <div className="rounded-md border border-dashed border-hairline p-8 text-center text-sm text-faint">
           题库加载中…
         </div>
       )}
 
       {loadError && (
-        <div className="rounded border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-md border border-bad/40 bg-bad/10 p-4 text-sm text-bad">
           题库加载失败：{loadError}（请确认 dev server 与 PostgreSQL 可用）
         </div>
       )}
@@ -142,10 +142,10 @@ export default function ProblemsListPage() {
             href={`/problems/${p.id}`}
             onMouseEnter={prefetchMonaco}
             onFocus={prefetchMonaco}
-            className="group flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4 transition hover:border-blue-500/60 hover:bg-zinc-900"
+            className="group flex flex-col gap-3 rounded-md border border-hairline bg-surface p-4 transition-colors hover:border-accent/50 hover:bg-raised"
           >
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-semibold text-zinc-100 group-hover:text-blue-400">
+              <h3 className="text-base font-medium text-fg group-hover:text-accent-bright">
                 {p.title}
               </h3>
               <span
@@ -160,22 +160,22 @@ export default function ProblemsListPage() {
               {p.tags.slice(0, 4).map((t) => (
                 <span
                   key={t}
-                  className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400"
+                  className="rounded bg-raised px-1.5 py-0.5 text-[10px] text-muted"
                 >
                   {t}
                 </span>
               ))}
             </div>
-            <div className="mt-auto flex items-center justify-between text-[11px] text-zinc-500">
+            <div className="mt-auto flex items-center justify-between text-[11px] text-faint">
               <span>{categoryLabels[p.category]}</span>
-              <span className="text-zinc-600 group-hover:text-blue-400">
-                进入 →
+              <span className="text-faint group-hover:text-accent-bright">
+                进入
               </span>
             </div>
           </Link>
         ))}
         {list.length === 0 && problems !== null && !loadError && (
-          <div className="col-span-full rounded border border-dashed border-zinc-800 p-8 text-center text-sm text-zinc-500">
+          <div className="col-span-full rounded-md border border-dashed border-hairline p-8 text-center text-sm text-faint">
             该分类下暂无题目
           </div>
         )}
@@ -196,10 +196,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3 py-1 text-xs transition ${
+      className={`rounded-full border px-3 py-1 text-xs transition-colors ${
         active
-          ? 'border-blue-500 bg-blue-500/20 text-blue-300'
-          : 'border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+          ? 'border-accent bg-accent/15 text-accent-bright'
+          : 'border-hairline text-muted hover:border-hairline-strong hover:text-fg'
       }`}
     >
       {children}

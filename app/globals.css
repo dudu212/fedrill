@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * FEDrill 设计 token —— 全站视觉的单一事实来源。
+ *
+ * 语义色板用运行时 CSS 变量承载：`:root` 放浅色值，`.dark` 覆盖为深色值。
+ * 工具类( bg-surface / text-fg / … )经 @theme inline 直接解析这些变量，
+ * 因此在元素层随 .dark 切换 —— 组件里不需要写 dark: 前缀。
+ *
+ * 层级约定:
+ *   base 页面背景 → surface 面板 → raised 悬浮/hover
+ *   hairline 1px 发丝边框 → hairline-strong 强调边框
+ *   fg 正文 → muted 次要 → faint 弱化
+ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
+
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 浅色 —— 冷调灰白,不发黄、不发绿;钢蓝强调色在浅底上换更深的档位保证对比度 */
+:root {
+  color-scheme: light;
+
+  --base: #f6f8fa;
+  --surface: #ffffff;
+  --raised: #eef1f5;
+  --hairline: #e2e6ec;
+  --hairline-strong: #c9d1d9;
+
+  --fg: #1f2328;
+  --muted: #57606a;
+  --faint: #8b949e;
+
+  --accent: #3b6fd4;
+  --accent-bright: #2f5bb8;
+  --accent-dim: #2a4f9e;
+
+  --ok: #1a7f4b;
+  --warn: #9a6700;
+  --bad: #cf222e;
+}
+
+/* 深色 —— 冷调近黑;强调色更亮以在深底上保持可读 */
+.dark {
+  color-scheme: dark;
+
+  --base: #0b0e14;
+  --surface: #11151d;
+  --raised: #161b25;
+  --hairline: #232a36;
+  --hairline-strong: #303a49;
+
+  --fg: #e6ebf2;
+  --muted: #8b96a6;
+  --faint: #5f6a7a;
+
+  --accent: #5b8def;
+  --accent-bright: #7aa5f2;
+  --accent-dim: #4a76c4;
+
+  --ok: #34b876;
+  --warn: #c9962a;
+  --bad: #e5534b;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--base);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+/* 首页 hero 的唯一一处入场动画：一次淡入上移,克制、不铺满全页。 */
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-enter {
+  animation: hero-enter 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter {
+    animation: none;
+  }
 }

@@ -91,17 +91,20 @@ export default function ChatDemoPage() {
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-4 p-8">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Chat Demo · F-004</h1>
-          <p className="text-sm text-zinc-500">
-            验证 <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">/api/chat</code> 流式端到端 · 0 依赖手写 SSE 解析
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Chat Demo · F-004
+          </h1>
+          <p className="text-sm text-muted">
+            验证 <code className="rounded bg-raised px-1 py-0.5 text-xs">/api/chat</code>{' '}
+            流式端到端 · 0 依赖手写 SSE 解析
           </p>
         </div>
         <ApiKeySettings />
       </header>
 
-      <section className="flex min-h-[400px] flex-1 flex-col gap-3 rounded border border-zinc-800 p-4">
+      <section className="flex min-h-[400px] flex-1 flex-col gap-3 rounded-md border border-hairline p-4">
         {messages.length === 0 && (
-          <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
+          <div className="flex flex-1 items-center justify-center text-sm text-faint">
             输入一条消息开始 · 例如"帮我练一道 debounce"
           </div>
         )}
@@ -110,11 +113,11 @@ export default function ChatDemoPage() {
             key={i}
             className={`rounded px-3 py-2 text-sm ${
               m.role === 'user'
-                ? 'self-end bg-blue-600 text-white'
-                : 'self-start bg-zinc-800 text-zinc-100'
+                ? 'self-end bg-accent text-white'
+                : 'self-start bg-raised text-fg'
             }`}
           >
-            <div className="mb-1 text-[10px] uppercase opacity-60">{m.role}</div>
+            <div className="mb-1 text-[10px] text-faint">{m.role}</div>
             <div className="whitespace-pre-wrap">
               {m.content}
               {streaming && i === messages.length - 1 && m.role === 'assistant' && (
@@ -126,7 +129,7 @@ export default function ChatDemoPage() {
       </section>
 
       {error && (
-        <div className="rounded border border-red-500 bg-red-500/10 p-3 text-sm text-red-400">
+        <div className="rounded-md border border-bad bg-bad/10 p-3 text-sm text-bad">
           {error}
         </div>
       )}
@@ -144,26 +147,26 @@ export default function ChatDemoPage() {
           placeholder="Ctrl/Cmd + Enter 发送"
           rows={3}
           disabled={streaming}
-          className="flex-1 resize-none rounded border border-zinc-800 bg-zinc-950 p-2 text-sm text-zinc-100 disabled:opacity-50"
+          className="flex-1 resize-none rounded-md border border-hairline bg-surface p-2 text-sm text-fg outline-none focus:border-accent disabled:opacity-50"
         />
         <div className="flex flex-col gap-2">
           <button
             onClick={send}
             disabled={streaming || !input.trim()}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-dim disabled:opacity-50"
           >
             发送
           </button>
           <button
             onClick={stop}
             disabled={!streaming}
-            className="rounded bg-zinc-700 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-600 disabled:opacity-30"
+            className="rounded-md bg-raised px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-hairline-strong disabled:opacity-30"
           >
             中断
           </button>
           <button
             onClick={reset}
-            className="rounded border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+            className="rounded-md border border-hairline px-4 py-2 text-sm text-muted transition-colors hover:bg-raised"
           >
             清空
           </button>
