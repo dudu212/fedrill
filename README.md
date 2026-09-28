@@ -10,50 +10,47 @@ FEDrill 是一个**前端开发者训练平台**，用 AI 模拟教练对你阶�
 - 🧠 **算法题**（M3）：苏格拉底式引导（不给答案）+ D3 算法可视化
 - 📚 **八股题**（M4）：对话式深挖 + SM-2 间隔重复调度
 
-## 当前进度（2026-09-01）
+## 当前进度（2026-09-26）
 
-**M1 · 手撕题单题闭环** ✅ 已跑通
+里程碑：M1 骨架 → M2 Agent Loop → M3 算法可视化 → M4 PostgreSQL → M5 MCP + 上线。
+**当前处于 M5 收尾阶段** —— 三大改造 Phase（题库迁移 / 画像 / OAuth 登录）已合入，剩 MCP 集成与正式上线。
 
-- 5 道预置手撕题（deepClone / flat / Promise.all / call / EventEmitter），覆盖 4 大分类
-- Web Worker 沙盒执行 + 手写 `deepEqual`（支持 Date / RegExp / 循环引用）
-- Monaco 编辑器 + Ctrl+Enter 快捷键 + 代码 localStorage 持久化
-- Round 0 苏格拉底 Agent（DeepSeek 流式，题目 / 代码 / 测试结果三输入 system prompt）
-- 三区详情页布局（左右栏 + 每栏上下均可拖拽调宽/调高）+ 测试结果 diff 视图 + 顶部进度条
-- 手写 SSE 解析（零依赖，客户端只用 `getReader() + TextDecoder`）
-- `AbortController` 中断链贯通到 DeepSeek 上游
-- Prompt 反幻觉基座：4 布尔状态标记 + 4 分支路由 + 优先级 0 知识题识别 + 陈旧检测（[复盘笔记](docs/learning/prompt-context-pitfalls.md)）
+**M1 · 手撕题单题闭环** ✅
 
-**M2a Phase 0** ✅ 起步准备完成
+- 预置手撕题（deepClone / flat / Promise.all / call / EventEmitter 等），覆盖 4 大分类
+- Web Worker 沙盒（`new Function`）+ 手写 `deepEqual` + Monaco 编辑器 + Ctrl+Enter
+- 三区可拖拽详情页 + 测试 diff 视图 + 顶部进度条
+- 手写 SSE 解析（零依赖）+ `AbortController` 中断链贯通
+- Prompt 反幻觉基座（4 状态标记 + 4 分支路由 + 陈旧检测）
 
-- SessionRepo（Repository Pattern · M4 换 PostgreSQL 时调用方零改动 · 自动迁移老 key）
-- Vitest 底线测试脚手架（43 条断言 · 覆盖 `deepEqual` / prompt / SessionRepo 迁移）
-- 五份 ADR（[002](docs/decisions/002-hand-rolled-vs-sdk-agent.md) / [004](docs/decisions/004-agent-loop-vs-langchain.md) / [006](docs/decisions/006-sandbox-vs-oj.md) / [009](docs/decisions/009-ai-test-autonomy-tiers.md) / [010](docs/decisions/010-playwright-e2e.md)）—— "拒绝一把梭抽象" 技术叙事
-- Playwright E2E 骨架 + AI 测试 tier 分级
-- 学习笔记：[tool-use-and-react](docs/learning/tool-use-and-react.md)、[prompt-context-pitfalls](docs/learning/prompt-context-pitfalls.md)、[ai-testing-interview](docs/learning/ai-testing-interview.md)
+**M2 · 完整 Agent Loop** ✅
 
-**M2a Phase 1a** ✅ 端到端跑通
+- 手写 ReAct loop（`lib/agent/loop.ts`）+ Provider 抽象层（DeepSeek）
+- 客户端跑 loop + 服务端零状态 SSE 代理（ADR-011）
+- `run_tests` tool 集成 + 流式状态栏 + Trace 卡片四态 + Round 0 → 1 边界追问
+- BYOK 零信任直连（浏览器 CORS 直连 DeepSeek）+ Vercel 上线
 
-- **手写 Agent Loop**（`lib/agent/loop.ts` · ReAct + `MAX_ITERATIONS=10` + AbortSignal 端到端）
-- **Provider 抽象层**（`lib/llm/` · DeepSeek 实现 · tool_call 分片拼装 + args JSON.parse 藏于 adapter）
-- **客户端跑 loop + 服务端零状态 SSE 代理**（见 [ADR-011](docs/decisions/011-client-side-agent-loop.md)）
-- **`run_tests` tool 集成**：客户端本地执行，复用 M1 Web Worker 沙箱
-- **Streaming 状态栏**：`🤔 思考 → 🔧 调用工具 → 📊 分析结果 → ✍️ 生成回复`，AI 每一步动作对用户可见
-- **语义一致性**：AI 触发跑测试与用户点"运行"按钮的可见效果完全一致
+**M3 · 算法可视化** ✅
 
-**M2a Phase 1b + 1c** ✅ 主体完成
+- 算法题 10 道（排序 / 二分 / 动态规划等）+ D3 过程可视化（`lib/visualization/traces/`）
+- 苏格拉底式引导（`socratic-prompt`）+ 分级提示
 
-- Trace UI 卡片化 · pending / partial(琥珀)/ fullPass(绿)/ error(红)四态 · 可展开看 tool 内幕 JSON
-- Round 1 边界追问 prompt · 客户端按 `currentRound` 派生切 prompt
-- Vercel 上线 · [fedrill.vercel.app](https://fedrill.vercel.app)
-- BYOK(Bring Your Own Key)· 零成本运营模式
-- **零信任 BYOK · 浏览器 CORS 直连 DeepSeek · Key 技术上不可能上服务端**
+**M4 · PostgreSQL 会话持久化** ✅
 
-**M2a 剩余小尾巴**(可选):
+- 裸 `pg` 直连（ADR-013，弃 Supabase）+ `PostgresSessionRepo` + `HttpSessionRepo`
+- `SessionRepo` 接口不变，`NEXT_PUBLIC_USE_POSTGRES=1` 唯一切换点
 
-- Monaco 慢加载优化(dynamic import + prefetch)
-- 技术亮点最终 review + demo GIF(如果需要)
+**M5 · MCP + 上线** 🔶 主体完成
 
-详细路线见 [docs/roadmap-m2.md](docs/roadmap-m2.md) —— M2 冲刺单一事实源。
+- Phase 1：题库全量迁移 PostgreSQL（`scripts/migrate-problems.ts` 幂等 upsert）
+- Phase 2：用户画像落库 + `/profile`（技能矩阵 / 连续打卡 / 最近训练）
+- Phase 3：GitHub OAuth 登录 + 匿名数据合并
+- 剩余：MCP 集成 · 正式上线（当前 Vercel 为 M2 版）
+- 附：UI 主题化重构 + 亮暗主题切换（2026-09-26）
+
+**推迟到 M5 之后**：八股题 + SM-2 间隔重复（SRS，`srs_cards` 表已预留）
+
+详细路线见 [docs/roadmap-m5.md](docs/roadmap-m5.md) —— M5 冲刺单一事实源。
 
 **范围锁**：不复刻 LeetCode（不追加大量题、不做多语言、不做用户系统），明文见 [需求方案.md §8](docs/需求方案.md#8--out-of-scope明确不做)。
 
