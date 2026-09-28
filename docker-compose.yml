@@ -1,0 +1,31 @@
+# FEDrill 本地数据库自举（给同学 / 协作者用）
+#
+# 三步起库：
+#   docker compose up -d
+#   docker compose exec -T postgres psql -U ddd -d fedrill < fedrill.sql
+#   pnpm exec tsx scripts/migrate-problems.ts
+# 详见 docs/本地数据库自举.md
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: fedrill-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ddd
+      POSTGRES_PASSWORD: ddd
+      POSTGRES_DB: fedrill
+    ports:
+      # 若本机 5432 已被占用，改左边端口（如 "5433:5432"），
+      # 并同步改 .env.local 的 DATABASE_URL
+      - "5432:5432"
+    volumes:
+      - fedrill_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ddd -d fedrill"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  fedrill_pgdata:
