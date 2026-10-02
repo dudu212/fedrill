@@ -20,6 +20,7 @@ import { buildRound0SystemPrompt } from '@/lib/agent/round0-prompt'
 import { buildRound1SystemPrompt } from '@/lib/agent/round1-prompt'
 import { runAgentLoop } from '@/lib/agent/loop'
 import type { ProviderMessage } from '@/lib/llm/types'
+import { Markdown } from '@/app/_components/markdown'
 import { ApiKeySettings } from '@/app/_components/api-key-settings'
 import { useTheme } from '@/lib/settings/theme'
 import {
@@ -419,21 +420,21 @@ export default function ProblemDetailPage() {
             className="min-h-0 overflow-auto border border-hairline bg-surface p-5"
             style={{ flex: `0 0 ${leftTopPct}%` }}
           >
-            <h2 className="mb-3 text-2xl font-semibold text-fg">
+            <h2 className="mb-3 text-xl font-semibold text-fg">
               {problem.title}
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {problem.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded bg-raised px-2 py-0.5 text-xs text-fg"
+                  className="rounded bg-raised px-2 py-0.5 text-xs text-muted"
                 >
                   {t}
                 </span>
               ))}
             </div>
-            <article className="mt-4 whitespace-pre-wrap text-base leading-7 text-fg">
-              {problem.description}
+            <article className="mt-4 text-base leading-7 text-fg">
+              <Markdown text={problem.description} />
             </article>
           </div>
           <ResizeHandle
@@ -442,7 +443,7 @@ export default function ProblemDetailPage() {
             setPct={setLeftTopPct}
           />
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-hairline bg-surface">
-            <div className="border-b border-hairline px-4 py-2 text-sm font-medium text-muted">
+            <div className="border-b border-hairline px-4 py-2.5 text-sm font-medium text-muted">
               测试结果
               {total > 0 &&
                 ` · ${passCount}/${total} 通过 · ${testResults?.totalDurationMs.toFixed(0)}ms`}
@@ -454,7 +455,7 @@ export default function ProblemDetailPage() {
                 </div>
               )}
               {!testError && !testResults && (
-                <div className="text-fg0">
+                <div className="text-faint">
                   点"运行"或 Ctrl/Cmd+Enter 开始
                 </div>
               )}
@@ -480,7 +481,7 @@ export default function ProblemDetailPage() {
             className="flex flex-col overflow-hidden border border-hairline"
             style={{ flex: `0 0 ${rightTopPct}%` }}
           >
-            <div className="flex items-center justify-between border-b border-hairline bg-surface px-3 py-2 text-sm">
+            <div className="flex items-center justify-between border-b border-hairline bg-surface px-4 py-2.5 text-sm">
               <span className="text-muted">
                 导出函数：
                 <code className="rounded bg-raised px-1.5 py-0.5 text-fg">
@@ -539,12 +540,12 @@ export default function ProblemDetailPage() {
           />
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-hairline bg-surface">
-            <div className="border-b border-hairline px-3 py-2 text-sm font-medium text-muted">
+            <div className="border-b border-hairline px-4 py-2.5 text-sm font-medium text-muted">
               Agent 对话 · Round {currentRound}
             </div>
             <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
               {messages.length === 0 && (
-                <div className="flex h-full items-center justify-center text-sm text-fg0">
+                <div className="flex h-full items-center justify-center text-sm text-faint">
                   说点什么，比如"我不会写"或"我这样写对吗？"
                 </div>
               )}
@@ -560,8 +561,8 @@ export default function ProblemDetailPage() {
                   <div className="mb-1 text-xs text-faint">
                     {m.role === 'user' ? 'you' : 'agent'}
                   </div>
-                  <div className="whitespace-pre-wrap">
-                    {m.content}
+                  <div>
+                    <Markdown text={m.content} />
                     {streaming &&
                       i === messages.length - 1 &&
                       m.role === 'assistant' && (
@@ -614,7 +615,7 @@ export default function ProblemDetailPage() {
                 }}
                 placeholder="Enter 发送 · Shift+Enter 换行"
                 disabled={streaming}
-                className="h-full flex-1 resize-none overflow-y-auto rounded border border-hairline bg-surface px-3 py-2 text-base text-fg placeholder:text-fg0 disabled:opacity-50"
+                className="h-full flex-1 resize-none overflow-y-auto rounded border border-hairline bg-surface px-3 py-2 text-base text-fg placeholder:text-faint disabled:opacity-50"
               />
               <div className="flex h-full flex-col gap-1">
                 <button
@@ -797,7 +798,7 @@ function ToolCallCard({ call }: { call: UIToolCall }) {
           <span className="text-fg">{summary}</span>
         </span>
         {!isPending && (
-          <span className="text-xs text-fg0">
+          <span className="text-xs text-faint">
             {expanded ? '收起' : '展开'}
           </span>
         )}
@@ -832,7 +833,7 @@ function TestResultRow({ result }: { result: TestResult }) {
         <span className="font-medium text-fg">
           {result.passed ? '✓' : '✗'} {result.name ?? '?'}
         </span>
-        <span className="text-xs text-fg0">
+        <span className="text-xs text-faint">
           {result.durationMs.toFixed(1)}ms
         </span>
       </button>
