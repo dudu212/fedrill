@@ -14,6 +14,11 @@ import myNew from './my-new'
 import myApply from './my-apply'
 import eventEmitter from './event-emitter'
 import singleton from './singleton'
+import arrayToTree from './array-to-tree'
+import promisePool from './promise-pool'
+import promiseRetry from './promise-retry'
+import once from './once'
+import curry from './curry'
 
 export const problems: ImplProblemMinimal[] = [
   deepClone,
@@ -31,6 +36,11 @@ export const problems: ImplProblemMinimal[] = [
   myApply,
   eventEmitter,
   singleton,
+  arrayToTree,
+  promisePool,
+  promiseRetry,
+  once,
+  curry,
 ]
 
 export const problemsById: Record<string, ImplProblemMinimal> = Object.fromEntries(
