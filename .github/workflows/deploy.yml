@@ -1,0 +1,99 @@
+name: Deploy to server
+
+# push 到 main 或手动触发时，构建 standalone 产物并部署到自建服务器。
+# 服务器只跑不 build，根治 Turbopack「上传产物丢软链 → ERR_MODULE_NOT_FOUND」，
+# 见 docs/learning/turbopack-external-module-symlink.md。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.17.0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (standalone)
+        env:
+          # NEXT_PUBLIC_* 只在构建期内联进前端 bundle，必须在这里显式设置。
+          # 服务器运行时读的是 .env.local（见 systemd 的 EnvironmentFile），两者是两套。
+          NEXT_PUBLIC_USE_POSTGRES: "1"
+          NEXT_PUBLIC_APP_URL: "https://fedrill.lxxldddgfit.cloud" # 改域名时同步改这里
+        run: pnpm build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Migrate DB（SSH 隧道）
+        run: |
+          # 隧道：CI 的 15432 -> 服务器 localhost:5432（docker-compose 的 PG）
+          ssh -N -L 15432:localhost:5432 \
+            -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=accept-new \
+            -i ~/.ssh/id_ed25519 \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" &
+          TUNNEL_PID=$!
+          sleep 3
+
+          # 在 CI 本地跑迁移：tsx + 源码 + pg 都在 CI 侧，连接串走隧道端口
+          DATABASE_URL="postgresql://ddd:ddd@localhost:15432/fedrill" \
+            pnpm exec tsx scripts/migrate-problems.ts
+
+          kill "$TUNNEL_PID" 2>/dev/null || true
+
+      - name: Package artifact
+        run: |
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          tar -czf release.tar.gz -C .next/standalone .
+
+      - name: Upload & Deploy
+        run: |
+          scp -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519 \
+            release.tar.gz "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}":/tmp/release.tar.gz
+
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519 \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          stamp=$(date +%Y%m%d-%H%M%S)
+          release="$HOME/fedrill-release-$stamp"
+
+          # 1) 解压到全新目录（不污染线上）
+          mkdir -p "$release"
+          tar -xzf /tmp/release.tar.gz -C "$release"
+
+          # 2) 环境变量随旧目录保留，复制到新目录并统一 LF（防 Windows CRLF）
+          cp "$HOME/fedrill/.env.local" "$release/.env.local"
+          sed -i 's/\r$//' "$release/.env.local"
+
+          # 3) 停服 -> 换目录 -> 起服（systemd 的 WorkingDirectory 仍指向 ~/fedrill，无需改）
+          sudo systemctl stop fedrill
+          mv "$HOME/fedrill" "$HOME/fedrill-backup-$stamp"
+          mv "$release" "$HOME/fedrill"
+          sudo systemctl start fedrill
+
+          # 4) 只保留最近 3 个备份
+          ls -dt "$HOME"/fedrill-backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf
+
+          echo "==> 部署完成"
+          sudo systemctl status fedrill --no-pager | head -n 6
+          REMOTE

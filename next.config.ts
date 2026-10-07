@@ -31,6 +31,11 @@ const CSP = [
 ].join('; ')
 
 const nextConfig: NextConfig = {
+  // 自包含产物：CI 构建后只上传 .next/standalone，服务器无需源码/构建工具链。
+  // 同时根治 Turbopack「上传产物丢软链 → ERR_MODULE_NOT_FOUND」
+  //（见 docs/learning/turbopack-external-module-symlink.md）。
+  output: 'standalone',
+
   async headers() {
     return [
       {
