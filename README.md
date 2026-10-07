@@ -62,7 +62,13 @@ FEDrill 是一个**前端开发者训练平台**，用 AI 模拟教练对你阶�
 ```bash
 pnpm install
 cp .env.local.example .env.local
-# 编辑 .env.local，填入 DEEPSEEK_API_KEY
+# 编辑 .env.local，填入 DEEPSEEK_API_KEY（BYOK 模式下可留空，访客自带 key）
+
+# 起本地 PostgreSQL + 建表 + 灌题（详见 docs/本地数据库自举.md）
+docker compose up -d
+docker compose exec -T postgres psql -U ddd -d fedrill < fedrill.sql
+pnpm exec tsx scripts/migrate-problems.ts
+
 pnpm dev
 ```
 
@@ -94,6 +100,7 @@ pnpm dev
 - [roadmap-m2.md](docs/roadmap-m2.md) — M2 冲刺单一事实源
 - [decisions/](docs/decisions/) — ADR 技术选型日志
 - [learning/](docs/learning/) — 学习笔记
+- [本地数据库自举.md](docs/本地数据库自举.md) — 同学/协作者一键起库指南（Docker + fedrill.sql + 迁移）
 
 ## Demo · 在线体验
 
