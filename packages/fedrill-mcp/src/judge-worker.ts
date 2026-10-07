@@ -50,6 +50,32 @@ port.on('message', async (msg: SandboxRequest) => {
 
     for (const c of cases) {
       const caseStart = performance.now()
+
+      // 行为型用例：编译测试脚本 → 传入用户函数 → 跑脚本拿 boolean（ADR-014）
+      if (c.script) {
+        try {
+          const testFn = new Function(`return (${c.script})`)()
+          const passed = await testFn(fn)
+          results.push({
+            name: c.name,
+            passed: !!passed,
+            input: [],
+            expected: null,
+            durationMs: performance.now() - caseStart,
+          })
+        } catch (err) {
+          results.push({
+            name: c.name,
+            passed: false,
+            input: [],
+            expected: null,
+            error: err instanceof Error ? err.message : String(err),
+            durationMs: performance.now() - caseStart,
+          })
+        }
+        continue
+      }
+
       try {
         const args = reifyInput(c.input) as unknown[]
         const actual = await Promise.resolve(fn(...args))

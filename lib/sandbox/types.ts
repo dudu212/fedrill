@@ -2,6 +2,8 @@ export type TestCase = {
   name?: string
   input: unknown[]
   expected: unknown
+  /** 行为型用例：测试脚本 `(fn) => boolean | Promise<boolean>`。存在则走行为判题，忽略 input/expected */
+  script?: string
 }
 
 export type TestResult = {
